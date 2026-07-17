@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>杭沪苏宁 · 江南四城 8 日</title>
-<meta name="description" content="杭州-上海-苏州-南京，8天7晚江南经典环线，自然山水 × 历史文化 × 都市吃喝">
+<title>杭沪苏宁 · 江南四城 7 日</title>
+<meta name="description" content="杭州-上海-苏州-南京，7天6晚江南经典环线含迪士尼，自然山水 × 历史文化 × 都市吃喝">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<!-- Leaflet: local files, no CDN dependency -->
 <link rel="stylesheet" href="leaflet.css"/>
 <script src="leaflet.js"></script>
 <style>
@@ -87,6 +86,8 @@ a:hover { text-decoration: underline; }
 }
 .tab:active { transform: scale(.96); }
 .tab.active { background: var(--accent); color: #fff; }
+.tab.disney-tab { background: #e8f4fd; color: #0071e3; font-weight: 600; }
+.tab.disney-tab.active { background: #0071e3; color: #fff; }
 
 .content { max-width: 680px; margin: 0 auto; padding: 16px 16px calc(24px + var(--safe-bottom)); }
 
@@ -117,6 +118,7 @@ a:hover { text-decoration: underline; }
 .tl-dot.hotel   { background: var(--tint-orange); }
 .tl-dot.drink   { background: var(--tint-purple); }
 .tl-dot.transport { background: var(--text-tertiary); }
+.tl-dot.disney  { background: var(--tint-pink); }
 
 .card { background: var(--bg-elevated); border-radius: var(--radius-md); padding: 14px 16px; box-shadow: var(--shadow-sm); transition: box-shadow .25s ease; cursor: pointer; }
 .card:active { box-shadow: var(--shadow-md); }
@@ -128,6 +130,8 @@ a:hover { text-decoration: underline; }
 .badge.food   { background: rgba(255,59,48,.1);  color: var(--tint-red); }
 .badge.spot   { background: rgba(0,122,255,.1);  color: var(--tint-blue); }
 .badge.drink  { background: rgba(175,82,222,.1); color: var(--tint-purple); }
+.badge.disney { background: rgba(255,45,85,.1);  color: var(--tint-pink); }
+.badge.restaurant { background: rgba(255,59,48,.08); color: var(--tint-red); font-size: 10px; }
 
 .budget { display: inline-block; margin-top: 6px; padding: 3px 10px; background: var(--bg-grouped); border-radius: var(--radius-sm); font-size: 12px; color: var(--text-secondary); font-weight: 500; }
 
@@ -149,6 +153,15 @@ a:hover { text-decoration: underline; }
 .btn.xhs    { background: #ff2442; color: #fff; }
 .btn.dp     { background: #ffa700; color: #fff; }
 .btn.rsv    { background: var(--tint-green); color: #fff; }
+
+/* Restaurant sub-card */
+.resto-group { margin-left: 8px; padding-left: 12px; border-left: 2px solid rgba(255,59,48,.2); }
+.resto-card { background: var(--bg-tertiary); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 6px; font-size: 13px; cursor: pointer; }
+.resto-card .r-name { font-weight: 600; font-size: 14px; }
+.resto-card .r-desc { color: var(--text-secondary); font-size: 12px; margin-top: 2px; }
+.resto-card .r-budget { color: var(--tint-orange); font-size: 11px; font-weight: 500; margin-top: 2px; }
+.resto-card .r-links { margin-top: 4px; display: flex; gap: 4px; }
+.resto-card .r-links a { font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--bg-grouped); color: var(--accent); text-decoration: none; }
 
 .as-overlay {
   position: fixed; inset: 0; z-index: 9999;
@@ -196,6 +209,10 @@ a:hover { text-decoration: underline; }
 .legend-item { display: flex; align-items: center; gap: 5px; }
 .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
 
+.disney-banner { background: linear-gradient(135deg, #ff2d55, #af52de); color: #fff; border-radius: var(--radius-lg); padding: 20px; text-align: center; margin: 16px 0; }
+.disney-banner h3 { font-size: 20px; margin-bottom: 6px; }
+.disney-banner p { font-size: 14px; opacity: .85; }
+
 .leaflet-popup-content-wrapper { border-radius: var(--radius-md) !important; box-shadow: var(--shadow-lg) !important; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif !important; }
 .leaflet-popup-content { font-size: 14px !important; line-height: 1.5 !important; margin: 12px 14px !important; }
 .leaflet-popup-content a { color: var(--accent) !important; }
@@ -212,6 +229,55 @@ a:hover { text-decoration: underline; }
 <div class="content" id="content"></div>
 
 <script>
+// ═══════════════════════════════════════════════════
+//  DEVICE DETECTION
+// ═══════════════════════════════════════════════════
+const IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile|mobile/i.test(navigator.userAgent || '');
+const IN_APP_WEBVIEW = (() => {
+  const ua = (navigator.userAgent || '').toLowerCase();
+  return /micromessenger|xhs|xhsdiscover|discover\/|tiktok|aweme|weibo|qq\/|qqbrowser|alipayclient|dingtalk|lark|feishu|ucbrowser|baiduboxapp|toutiao|newsarticle/.test(ua);
+})();
+
+// ═══════════════════════════════════════════════════
+//  LINK HELPERS — Smart app/web fallback
+// ═══════════════════════════════════════════════════
+function xhsKeyword(loc) {
+  if(loc.xhsKeyword) return loc.xhsKeyword.trim();
+  return (loc.name||'').replace(/⭐.*$/g,'').replace(/（.*?）/g,'').replace(/\(.*?\)/g,'').replace(/\s+/g,' ').trim();
+}
+function xhsAppUrl(loc) { return `xhsdiscover://search/result?keyword=${encodeURIComponent(xhsKeyword(loc))}&target_search=notes&source=deeplink`; }
+function xhsWebUrl(loc) { return `https://www.xiaohongshu.com/search_result?keyword=${encodeURIComponent(xhsKeyword(loc))}&source=web_explore_feed`; }
+
+function dpKeyword(loc) {
+  if(loc.dianpingKeyword) return loc.dianpingKeyword.trim();
+  return (loc.name||'').replace(/⭐.*$/g,'').replace(/（.*?）/g,'').replace(/\(.*?\)/g,'').replace(/\s+/g,' ').trim();
+}
+function dpAppUrl(loc) { return `dianping://searchshoplist?keyword=${encodeURIComponent(dpKeyword(loc))}`; }
+function dpWebUrl(loc) { return `https://m.dianping.com/searchshop?keyword=${encodeURIComponent(dpKeyword(loc))}`; }
+
+// Smart open: try app URL scheme on mobile, always fall back to web
+function smartOpen(appUrl, webUrl) {
+  if (IS_MOBILE && !IN_APP_WEBVIEW) {
+    // Mobile browser: try app scheme first, fallback to web
+    const start = Date.now();
+    window.location.href = appUrl;
+    setTimeout(() => {
+      // If page is still visible after 800ms, app didn't open
+      if (!document.hidden && !document.webkitHidden) {
+        window.open(webUrl, '_blank');
+      }
+    }, 800);
+    return false;
+  }
+  // Desktop or in-app webview: always use web URL in new tab
+  window.open(webUrl, '_blank');
+  return false;
+}
+
+// ═══════════════════════════════════════════════════
+//  TRIP DATA
+// ═══════════════════════════════════════════════════
+
 const HOTEL = { name: '全程高铁 — 每城住1-2晚', lat: 31.23, lng: 120.50 };
 
 const DAYS = [
@@ -221,19 +287,37 @@ const DAYS = [
     locations: [
       { name: '西湖', lat: 30.259242, lng: 120.130396, type: 'spot', time: '09:00',
         desc: '环湖漫步：断桥残雪→白堤→孤山→苏堤春晓，早晨人少光影最美',
-        budget: '免费', detail: '全程约 5km，步行 2-3 小时。如果走不动可以在湖滨路租共享单车，苏堤和白堤禁止骑行。\n\n推荐路线：断桥（起点）→ 白堤（1km）→ 孤山（西泠印社值得进去）→ 苏堤（2.8km）→ 花港观鱼（终点）。\n\n早上 7-9 点光线最好，中午太晒也太挤。',
+        budget: '免费', detail: '全程约 5km，步行 2-3 小时。推荐路线：断桥（起点）→ 白堤（1km）→ 孤山（西泠印社值得进去）→ 苏堤（2.8km）→ 花港观鱼（终点）。早上 7-9 点光线最好。',
         pay: { alipay: 1, wechat: 1, cash: 0.5 },
-        gmap: '杭州西湖', xhsKeyword: '杭州西湖 环湖路线 苏堤' },
+        gmap: '杭州西湖', xhsKeyword: '杭州西湖 环湖路线 苏堤',
+        nearbyRestos: [
+          { name: '楼外楼', lat: 30.255, lng: 120.137, desc: '170年老字号，「西湖醋鱼」「龙井虾仁」「东坡肉」是招牌，孤山路30号，人均 ¥150-200', budget: '¥150-200/人', xhs: '楼外楼 西湖醋鱼' },
+          { name: '知味观·总店', lat: 30.250, lng: 120.166, desc: '百年老店，一楼小吃二楼点菜，「猫耳朵」「鲜肉小笼」「片儿川」经典杭州味', budget: '¥50-120/人', xhs: '知味观 杭州小吃 推荐', dp: '知味观 仁和路' },
+          { name: '奎元馆', lat: 30.247, lng: 120.170, desc: '江南面王，1867年开张，「虾爆鳝面」一绝，解放路154号', budget: '¥40-80/人', xhs: '奎元馆 虾爆鳝面', dp: '奎元馆 解放路' }
+        ]
+      },
       { name: '湖滨银泰 · 午餐', lat: 30.252201, lng: 120.166354, type: 'food', time: '12:30',
-        desc: '西湖边的商圈，杭帮菜集中地，人均 80-120',
-        budget: '¥80-120/人', detail: '推荐：外婆家（老牌杭帮菜，价格亲民）、绿茶（环境好但要排队）、新白鹿（性价比之王）。\n\n想吃面的话穿过延安路去奎元馆（百年老店，虾爆鳝面一绝）。\n\n周末中午排队严重，建议 11:30 前到。',
+        desc: '西湖边最大商圈，杭帮菜集中地，外婆家/新白鹿/绿茶都在步行范围内',
+        budget: '¥80-120/人', detail: '推荐：外婆家（老牌杭帮菜，价格亲民）、绿茶（环境好但要排队）、新白鹿（性价比之王）。想吃面去奎元馆（百年老店，虾爆鳝面一绝）。周末中午排队严重，建议 11:30 前到。',
         pay: { alipay: 1, wechat: 1, card: 1, cash: 0.5 },
-        dianpingKeyword: '湖滨银泰 杭帮菜', xhsKeyword: '杭州湖滨 午餐推荐' },
+        dianpingKeyword: '湖滨银泰 杭帮菜', xhsKeyword: '杭州湖滨 午餐推荐',
+        nearbyRestos: [
+          { name: '外婆家·湖滨店', lat: 30.251, lng: 120.166, desc: '杭帮菜连锁标杆，「茶香鸡」「青豆泥」「麻婆豆腐」3块钱一份，人均 ¥60-80', budget: '¥60-80/人', xhs: '外婆家 杭州 必点', dp: '外婆家 湖滨' },
+          { name: '新白鹿餐厅', lat: 30.250, lng: 120.167, desc: '性价比之王，「蛋黄鸡翅」「糖醋排骨」只要¥9.9，「一品开背虾」超下饭', budget: '¥50-70/人', xhs: '新白鹿 必点菜', dp: '新白鹿 湖滨' },
+          { name: 'Foamy Foamy', lat: 30.253, lng: 120.165, desc: '湖滨甜品网红，「荔浦芋头蛋糕」杭州排名第一，下午茶好去处', budget: '¥30-50/人', xhs: 'FoamyFoamy 荔浦芋头', dp: 'Foamy Foamy' }
+        ]
+      },
       { name: '河坊街', lat: 30.240244, lng: 120.170888, type: 'spot', time: '15:00',
         desc: '南宋古街，老字号小吃 + 手工艺 + 胡庆余堂国药号',
-        budget: '免费（逛吃 ¥30-60）', detail: '一条仿古商业街，虽然商业化但几家老字号是真的：胡庆余堂（"南有庆余堂，北有同仁堂"）、张小泉剪刀、王星记扇子。\n\n小吃别在正街上吃，拐进旁边大井巷、高银街，味道好不少。推荐：定胜糕、葱包烩、吴山烤禽。',
+        budget: '免费（逛吃 ¥30-60）', detail: '一条仿古商业街，虽然商业化但几家老字号是真的：胡庆余堂（"南有庆余堂，北有同仁堂"）、张小泉剪刀、王星记扇子。小吃别在正街上吃，拐进旁边大井巷、高银街。推荐：定胜糕、葱包烩、吴山烤禽。',
         pay: { alipay: 1, wechat: 1, cash: 1 },
-        gmap: '杭州河坊街', xhsKeyword: '河坊街 小吃推荐 避坑' },
+        gmap: '杭州河坊街', xhsKeyword: '河坊街 小吃推荐 避坑',
+        nearbyRestos: [
+          { name: '状元馆', lat: 30.241, lng: 120.171, desc: '河坊街上老面馆，1870年创，「片儿川」「虾仁拌川」地道杭州味', budget: '¥30-50/人', xhs: '状元馆 片儿川', dp: '状元馆 河坊街' },
+          { name: '羊汤饭店', lat: 30.240, lng: 120.171, desc: '百年老店，「羊肉烧卖」「羊杂汤」冬天一碗暖到脚', budget: '¥30-60/人', xhs: '羊汤饭店 河坊街', dp: '羊汤饭店' },
+          { name: '定胜糕·吴山烤禽', lat: 30.238, lng: 120.172, desc: '吴山脚下本地人排队买的烤鸡，定胜糕在隔壁大井巷现做现卖，趁热吃', budget: '¥15-30/人', xhs: '吴山烤禽 杭州', dp: '吴山烤禽' }
+        ]
+      },
     ]
   },
   {
@@ -241,27 +325,49 @@ const DAYS = [
     locations: [
       { name: '灵隐寺 + 飞来峰', lat: 30.244000, lng: 120.099000, type: 'spot', time: '08:00',
         desc: '江南禅宗五山之首，飞来峰石窟群 + 灵隐寺大殿',
-        budget: '飞来峰 ¥45 + 灵隐寺 ¥30', detail: '建议 7:30 前到，晚了旅游团大军压境。先上飞来峰看石窟（五代到元代共 300 多尊），再进灵隐寺。\n\n灵隐寺内：天王殿 → 大雄宝殿 → 药师殿 → 藏经楼 → 华严殿，按顺序走不回头。\n\n旁边的永福寺更安静，人少很多，有时间可以顺路进去。\n\n⚠️ 提前在"杭州寺院参观预约平台"微信公众号预约。',
+        budget: '飞来峰 ¥45 + 灵隐寺 ¥30', detail: '建议 7:30 前到，晚了旅游团大军压境。先上飞来峰看石窟（五代到元代共 300 多尊），再进灵隐寺。旁边的永福寺更安静，人少很多。⚠️ 提前在"杭州寺院参观预约平台"微信公众号预约。',
         pay: { alipay: 1, wechat: 1, cash: 1 },
-        gmap: '杭州灵隐寺', reserve: 'https://www.lingyinsi.org/', xhsKeyword: '灵隐寺 攻略 预约' },
-      { name: '灵隐周边 · 素食午餐', lat: 30.242000, lng: 120.102000, type: 'food', time: '12:30',
-        desc: '灵隐寺十方苑素面 or 附近天竺路素食小馆',
-        budget: '¥30-60/人', detail: '首选灵隐寺内"十方苑"的素面（¥25-30），罗汉斋、素鹅都不错。\n\n备选：天竺路上"知竹"（人均 ¥60，环境雅致但人多）、"法云安缦蒸菜馆"（贵，人均 ¥200+，但值得）。\n\n如果想吃荤的，下山到茅家埠一带，农家菜馆很多。',
+        gmap: '杭州灵隐寺', xhsKeyword: '灵隐寺 攻略 预约',
+        nearbyRestos: [
+          { name: '十方苑·素面', lat: 30.243, lng: 120.100, desc: '灵隐寺内的素斋馆，罗汉斋面¥25、素鹅¥15，环境清幽，吃完继续逛', budget: '¥25-40/人', xhs: '灵隐寺 十方苑 素面', dp: '灵隐寺 十方苑' },
+          { name: '知竹', lat: 30.242, lng: 120.102, desc: '天竺路上的人气素食小馆，「知味汤面」「手工煎饺」很有禅意，人均 ¥60', budget: '¥50-80/人', xhs: '知竹 灵隐 素食', dp: '知竹 天竺路' },
+          { name: '弥鹿餐厅', lat: 30.243, lng: 120.098, desc: '灵隐附近的创意私房菜，藏在竹林里，「桂花糖藕」「黄鱼烧年糕」口碑好', budget: '¥80-120/人', xhs: '弥鹿餐厅 灵隐', dp: '弥鹿 灵隐' }
+        ]
+      },
+      { name: '灵隐周边 · 午餐', lat: 30.242000, lng: 120.102000, type: 'food', time: '12:30',
+        desc: '灵隐寺十方苑素面 or 天竺路素食小馆 or 下山茅家埠农家菜',
+        budget: '¥30-120/人', detail: '首选灵隐寺内"十方苑"素面（¥25-30）。天竺路上"知竹"（人均 ¥60，环境雅致）。想吃荤的下山到茅家埠一带，农家菜馆很多。',
         pay: { alipay: 1, wechat: 1, cash: 0.5 },
         dianpingKeyword: '灵隐寺 素食 十方苑', xhsKeyword: '灵隐寺 素面 好吃' },
       { name: '龙井村 · 问茶', lat: 30.217394, lng: 120.107111, type: 'spot', time: '14:30',
-        desc: '狮峰龙井核心产区，茶园漫步 + 茶农家喝茶',
-        budget: '喝茶 ¥30-80', detail: '从灵隐出来打车 15 分钟到龙井村。沿着村道走到狮峰山脚下，两边全是茶园。\n\n找个茶农坐下喝一杯（别买路边的"现炒龙井"，大部分不是本山的）。真正的狮峰龙井清明前后 ¥500+/斤，夏茶几十块一斤但味道天差地别。\n\n体力好的话可以走"十里琅珰"古道（龙井村→云栖竹径，约 2 小时），沿途全是茶山，杭州最美的徒步线之一。',
+        desc: '狮峰龙井核心产区，茶园漫步 + 茶农家喝茶 + 十里琅珰古道',
+        budget: '喝茶 ¥30-80', detail: '从灵隐出来打车 15 分钟到龙井村。找个茶农坐下喝一杯（别买路边的"现炒龙井"）。体力好的话走"十里琅珰"古道（龙井村→云栖竹径，约 2 小时），杭州最美徒步线之一。',
         pay: { alipay: 1, wechat: 1, cash: 1 },
-        gmap: '杭州龙井村', xhsKeyword: '龙井村 十里琅珰 茶园' },
+        gmap: '杭州龙井村', xhsKeyword: '龙井村 十里琅珰 茶园',
+        nearbyRestos: [
+          { name: '茶人村·龙井', lat: 30.218, lng: 120.108, desc: '龙井村口的茶馆+餐厅，坐在茶园边喝茶吃饭，「茶香鸡」「龙井虾仁」地道', budget: '¥100-150/人', xhs: '茶人村 龙井', dp: '茶人村 龙井路' },
+          { name: '绿茶餐厅·龙井总店', lat: 30.221, lng: 120.112, desc: '绿茶发源地店，环境秒杀商场分店，坐在荷塘边吃饭，菜价不变', budget: '¥60-90/人', xhs: '绿茶 龙井总店 环境好', dp: '绿茶 龙井路' }
+        ]
+      },
+      { name: '延安路 · 晚餐', lat: 30.263000, lng: 120.167000, type: 'food', time: '18:00',
+        desc: '回到市中心，延安路/武林路一带本地人夜宵圣地',
+        budget: '¥60-100/人', detail: '推荐：老头儿油爆虾（招牌油爆虾必点，人均 ¥80）、菊英面馆（上过《舌尖》，片儿川 ¥25）、慧娟面馆（望江路老店，火腿老鸭面一绝）。',
+        pay: { alipay: 1, wechat: 1, card: 1 },
+        dianpingKeyword: '延安路 杭州 晚餐 推荐', xhsKeyword: '杭州 延安路 本地人 晚餐',
+        nearbyRestos: [
+          { name: '老头儿油爆虾', lat: 30.262, lng: 120.166, desc: '杭州必吃榜常客，「油爆虾」「炸带鱼」「干炸响铃」道道经典，人均 ¥80', budget: '¥70-100/人', xhs: '老头儿油爆虾 必点', dp: '老头儿油爆虾 武林路' },
+          { name: '菊英面馆', lat: 30.260, lng: 120.169, desc: '上过《舌尖上的中国》，「片儿川」¥25一碗，加份大排更满足', budget: '¥25-40/人', xhs: '菊英面馆 片儿川', dp: '菊英面馆' },
+          { name: '慧娟面馆', lat: 30.255, lng: 120.175, desc: '望江路老店，30年老字号，「火腿老鸭面」「虾爆鳝面」杭州人从小吃到大', budget: '¥30-50/人', xhs: '慧娟面馆 老鸭面', dp: '慧娟面馆 望江路' }
+        ]
+      },
     ]
   },
   {
     id: 3, label: 'D3 沪上', date: 'Day 3 · 法桐午后', title: '杭州→上海 · 法租界漫步', color: '#ff9500',
     locations: [
       { name: '杭州东→上海虹桥', lat: 30.290851, lng: 120.212600, type: 'transport', time: '09:30',
-        desc: 'G 字头高铁，约 1 小时，二等座 ¥73',
-        budget: '¥73', detail: '杭州东站到上海虹桥站，每天 100+ 班次，基本随到随走。\n\n建议买 9:00-10:00 之间的班次，11 点前到上海。\n\n⚠️ 虹桥站巨大，出站后走 10 分钟才能到地铁，预留好时间。\n\n地铁 10 号线到交通大学站，出来就是法租界区域。',
+        desc: 'G 字头高铁约 1 小时，二等座 ¥73。每天 100+ 班次，随到随走',
+        budget: '¥73', detail: '建议买 9:00-10:00 班次，11 点前到上海。虹桥站巨大，出站走 10 分钟到地铁，地铁 10 号线到交通大学站。',
         pay: { alipay: 1, wechat: 1 },
         gmap: '杭州东站', xhsKeyword: '杭州东站 到 上海虹桥 高铁' },
       { name: '上海虹桥站', lat: 31.193964, lng: 121.320081, type: 'transport', time: '10:30',
@@ -269,169 +375,228 @@ const DAYS = [
         gmap: '上海虹桥站' },
       { name: '武康大楼 + 武康路', lat: 31.204430, lng: 121.438278, type: 'spot', time: '14:00',
         desc: '上海最出片的法桐街区，武康大楼 → 武康路 → 湖南路 → 安福路',
-        budget: '免费（咖啡 ¥30-50）', detail: '从交通大学站出来，沿淮海中路走 5 分钟到武康大楼（上海最著名的转角公寓，1924 年建）。\n\n然后沿武康路往北走：武康路（罗密欧阳台、巴金故居）→ 湖南路（安静弄堂）→ 安福路（潮人聚集地，RAC、Sunflour 等网红店）。\n\n全程步行 2-3km，不累，走走停停拍拍照，是上海最适合"citywalk"的一段。\n\n📸 武康大楼最佳机位：淮海中路/天平路交叉口的交通岛上（注意安全）。',
+        budget: '免费（咖啡 ¥30-50）', detail: '从交通大学站沿淮海中路走 5 分钟到武康大楼（1924 年建）。沿武康路往北：武康路（罗密欧阳台、巴金故居）→ 湖南路（安静弄堂）→ 安福路（潮人聚集地）。全程 2-3km，上海最适合 citywalk 的一段。',
         pay: { alipay: 1, wechat: 1, card: 1, cash: 0.5 },
-        gmap: '上海武康大楼', xhsKeyword: '武康路 citywalk 路线 拍照' },
+        gmap: '上海武康大楼', xhsKeyword: '武康路 citywalk 路线 拍照',
+        nearbyRestos: [
+          { name: '老吉士', lat: 31.204, lng: 121.436, desc: '天平路上海菜名店，张国荣生前常来，「红烧肉」「蟹粉豆腐」「心太软」必点，提前订位', budget: '¥150-200/人', xhs: '老吉士 上海本帮菜', dp: '老吉士 天平路' },
+          { name: '%Arabica', lat: 31.206, lng: 121.438, desc: '武康路网红咖啡，日式极简风，西班牙拿铁超好喝，拍照出片', budget: '¥35-50/人', xhs: 'Arabica 武康路 咖啡', dp: '%Arabica 武康路' },
+          { name: 'Alimentari', lat: 31.212, lng: 121.436, desc: '安福路上的意式小馆，火腿拼盘+葡萄酒，坐在路边看潮人，brunch首选', budget: '¥80-150/人', xhs: 'Alimentari 安福路', dp: 'Alimentari 安福路' }
+        ]
+      },
       { name: '新天地 · 晚间小酌', lat: 31.223594, lng: 121.469261, type: 'drink', time: '18:00',
         desc: '石库门改造的精致餐饮区，晚餐 + 一杯',
-        budget: '¥200-400/人（含晚餐+酒水）', detail: '打车从武康路到新天地约 15 分钟。晚餐推荐：\n\n• Green & Safe（有机农场风格，人均 ¥150）\n• Polux（法国小馆，人均 ¥200，要排队）\n• 蔡嘉（甜品超赞，简餐也不错）\n\n饭后在新天地北里/南里逛一圈，石库门老建筑改的酒吧和买手店，晚上灯光很好。\n\n想喝一杯：Speak Low（亚洲 Top 50 酒吧，藏在书店后面，需要找入口）、Sober Company。',
+        budget: '¥200-400/人（含晚餐+酒水）', detail: '晚餐推荐：Green & Safe（有机农场风，人均 ¥150）、Polux（法国小馆，人均 ¥200）、蔡嘉（甜品超赞）。饭后在新天地北里/南里逛一圈。想喝一杯：Speak Low（亚洲 Top 50 酒吧，藏在书店后面）、Sober Company。',
         pay: { alipay: 1, wechat: 1, card: 1, cash: 1 },
-        dianpingKeyword: '新天地 餐厅 推荐', xhsKeyword: '上海新天地 晚餐 酒吧' },
+        dianpingKeyword: '新天地 餐厅 推荐', xhsKeyword: '上海新天地 晚餐 酒吧',
+        nearbyRestos: [
+          { name: 'Green & Safe', lat: 31.224, lng: 121.470, desc: '有机农场风，从农场到餐桌，「黑松露披萨」「色拉碗」新鲜健康', budget: '¥120-180/人', xhs: 'Green Safe 新天地', dp: 'Green Safe 新天地' },
+          { name: 'Polux by Paul Pairet', lat: 31.225, lng: 121.469, desc: '人均¥200的法式小馆，UV主厨出品，「法式吐司」「牛肉塔塔」惊艳', budget: '¥180-250/人', xhs: 'Polux 新天地 法餐', dp: 'Polux 新天地' },
+          { name: 'Speak Low', lat: 31.223, lng: 121.470, desc: '亚洲Top50酒吧，藏在书店后面的机关门，找入口本身就是一种体验', budget: '¥100-150/杯', xhs: 'Speak Low 上海 隐藏酒吧', dp: 'Speak Low 复兴中路' }
+        ]
+      },
     ]
   },
   {
-    id: 4, label: 'D4 上海', date: 'Day 4 · 十里洋场', title: '上海 · 外滩豫园', color: '#ff9500',
+    id: 4, label: '🏰 D4 迪士尼', date: 'Day 4 · 迪士尼乐园', title: '上海 · 迪士尼魔法日', color: '#ff2d55',
+    locations: [
+      { name: '上海迪士尼度假区', lat: 31.144000, lng: 121.656000, type: 'spot', time: '08:00',
+        desc: '中国大陆首座迪士尼乐园，七大主题园区，一整天沉浸魔法世界',
+        budget: '门票 ¥475-799（视日期），园内餐饮 ¥100-200/人', detail: '⚠️ 提前在"上海迪士尼度假区"官方 App 购票+预约入园日期！下载官方 App 看排队时间、预约等候卡、地图导航。\n\n🔥 必玩项目：创极速光轮（明日世界，全球最快迪士尼过山车）、加勒比海盗-沉落宝藏（宝藏湾，沉浸式体验天花板）、飞跃地平线（探险岛，排队最久，建议第一个冲）、七个小矮人矿山车、抱抱龙冲天赛车。\n\n📋 建议路线：开园直冲飞跃地平线→加勒比海盗→七个小矮人→创极速光轮→下午看花车巡游→晚上烟花秀（20:30，提前占位）。\n\n🎫 快速通行：买早享卡可提前1小时入园（¥149-199），尊享卡单项目 ¥180。\n\n🍿 必吃：火鸡腿（¥80，宝藏湾附近）、米奇头冰激凌（¥45）、爆米花桶。\n\n🏨 住迪士尼酒店（玩具总动员酒店 ¥1500+）可享早享入园。',
+        pay: { alipay: 1, wechat: 1, card: 1 },
+        gmap: '上海迪士尼度假区', xhsKeyword: '上海迪士尼 攻略 2024 排队 烟花',
+        nearbyRestos: [
+          { name: '皇家宴会厅', lat: 31.144, lng: 121.654, desc: '城堡内的主题餐厅，和迪士尼朋友合影，三道式套餐 ¥400+，生日/纪念日首选', budget: '¥400-600/人', xhs: '迪士尼 皇家宴会厅', dp: '皇家宴会厅 迪士尼' },
+          { name: '巴波萨烧烤', lat: 31.145, lng: 121.658, desc: '宝藏湾内的海盗主题餐厅，边吃边看过往的加勒比游船，「烤猪肋排饭」¥95', budget: '¥80-120/人', xhs: '迪士尼 巴波萨烧烤', dp: '巴波萨烧烤 迪士尼' },
+          { name: '迪士尼小镇·芝乐坊', lat: 31.142, lng: 121.660, desc: 'The Cheesecake Factory，园区外步行可达，「芝士蛋糕」「意面」份量超足', budget: '¥120-180/人', xhs: '芝乐坊 迪士尼小镇', dp: '芝乐坊 迪士尼小镇' },
+          { name: '迪士尼小镇·蓝蛙', lat: 31.142, lng: 121.661, desc: '汉堡+精酿啤酒，玩累了出来补充能量，比园内便宜不少', budget: '¥80-120/人', xhs: '蓝蛙 迪士尼小镇', dp: '蓝蛙 迪士尼小镇' }
+        ]
+      },
+      { name: '迪士尼小镇', lat: 31.142000, lng: 121.660000, type: 'food', time: '18:30',
+        desc: '迪士尼园区外的购物餐饮区，可凭当日门票自由进出',
+        budget: '¥80-200/人', detail: '迪士尼小镇是迪士尼园区外的开放区域，不需要门票。玩累了可以出来吃，凭当日门票可以再次入园。推荐：芝乐坊（The Cheesecake Factory）、蓝蛙、Wolfgang Puck。还有迪士尼世界商店，可以逛一逛。',
+        pay: { alipay: 1, wechat: 1, card: 1 },
+        dianpingKeyword: '迪士尼小镇 餐厅', xhsKeyword: '迪士尼小镇 美食 推荐' },
+    ]
+  },
+  {
+    id: 5, label: 'D5 上海', date: 'Day 5 · 十里洋场', title: '上海 · 外滩豫园', color: '#ff9500',
     locations: [
       { name: '豫园 + 城隍庙', lat: 31.225312, lng: 121.487633, type: 'spot', time: '09:00',
-        desc: '明代江南园林 + 城隍庙小吃，上海老城厢的魂',
-        budget: '豫园 ¥40', detail: '豫园是上海保存最好的明代园林，不大但精致（1-1.5 小时逛完）。九曲桥、大假山、玉玲珑太湖石是三大看点。\n\n城隍庙小吃广场别去（又贵又难吃，纯旅游陷阱）。真正值得吃的：南翔馒头店（小笼包，二楼堂食比一楼外卖好很多）、宁波汤团店（黑洋酥汤圆）、绿波廊（贵但正宗，点心和本帮菜）。\n\n⚠️ 周末人巨多，能平日去就平日去。',
+        desc: '明代江南园林 + 城隍庙小吃，上海老城厢的灵魂',
+        budget: '豫园 ¥40', detail: '豫园是上海保存最好的明代园林，不大但精致（1-1.5 小时逛完）。九曲桥、大假山、玉玲珑太湖石。城隍庙真正值得吃的：南翔馒头店（小笼包二楼堂食）、宁波汤团店（黑洋酥汤圆）、绿波廊（贵但正宗）。⚠️ 城隍庙小吃广场是旅游陷阱，别去！',
         pay: { alipay: 1, wechat: 1, card: 1, cash: 1 },
-        gmap: '上海豫园', reserve: 'https://www.yugarden.com.cn/', xhsKeyword: '豫园 城隍庙 值得吃' },
+        gmap: '上海豫园', xhsKeyword: '豫园 城隍庙 值得吃',
+        nearbyRestos: [
+          { name: '南翔馒头店', lat: 31.227, lng: 121.489, desc: '上海小笼包代名词，二楼堂食比一楼外卖好太多，「蟹粉小笼」¥42/6只', budget: '¥60-120/人', xhs: '南翔馒头店 小笼包 二楼', dp: '南翔馒头店 豫园' },
+          { name: '绿波廊', lat: 31.226, lng: 121.488, desc: '豫园内老字号，克林顿来过，「眉毛酥」「桂花拉糕」精致点心，人均 ¥200', budget: '¥150-250/人', xhs: '绿波廊 点心 豫园', dp: '绿波廊 豫园' },
+          { name: '宁波汤团店', lat: 31.227, lng: 121.488, desc: '城隍庙里的老店，「黑洋酥汤圆」「鲜肉汤圆」皮薄馅大，¥20一碗', budget: '¥20-40/人', xhs: '宁波汤团店 城隍庙', dp: '宁波汤团店 豫园' }
+        ]
+      },
       { name: '南京路步行街', lat: 31.236831, lng: 121.483088, type: 'spot', time: '13:00',
-        desc: '中华第一商业街，从人民广场走到外滩',
-        budget: '免费（逛吃 ¥50-100）', detail: '从人民广场地铁站出来，沿南京路一路往东走到外滩，全程约 1.5km。\n\n沿途看点：第一百货（老上海百货大楼）→ 永安百货（Art Deco 建筑）→ 和平饭店（进大堂看一眼，老上海爵士乐的发源地）。\n\n沈大成的青团、泰康食品的蝴蝶酥、邵万生的糟货，边走边吃很舒服。',
+        desc: '中华第一商业街，从人民广场走到外滩，边走边吃',
+        budget: '免费（逛吃 ¥50-100）', detail: '从人民广场沿南京路往东走 1.5km 到外滩。沿途看点：第一百货 → 永安百货（Art Deco）→ 和平饭店（进大堂看一眼）。沈大成青团、泰康食品蝴蝶酥、邵万生糟货，边走边吃。',
         pay: { alipay: 1, wechat: 1, card: 1, cash: 1 },
-        gmap: '上海南京路步行街', xhsKeyword: '南京路步行街 必逛 美食' },
+        gmap: '上海南京路步行街', xhsKeyword: '南京路步行街 必逛 美食',
+        nearbyRestos: [
+          { name: '沈大成', lat: 31.235, lng: 121.480, desc: '南京路老字号糕团店，「双酿团」「条头糕」「青团」现做现卖，¥10-20', budget: '¥10-30/人', xhs: '沈大成 南京路 青团', dp: '沈大成 南京路' },
+          { name: '泰康食品', lat: 31.236, lng: 121.482, desc: '蝴蝶酥上海天花板，新鲜出炉的奶香酥脆，排队也值得', budget: '¥20-40/人', xhs: '泰康食品 蝴蝶酥 上海', dp: '泰康食品 南京路' },
+          { name: '老正兴', lat: 31.235, lng: 121.488, desc: '福州路上的本帮菜老字号（近外滩），「草头圈子」「油爆虾」「红烧鮰鱼」经典', budget: '¥120-180/人', xhs: '老正兴 上海 本帮菜', dp: '老正兴 福州路' }
+        ]
+      },
       { name: '外滩 · 夜景', lat: 31.240000, lng: 121.490000, type: 'spot', time: '17:30',
-        desc: '万国建筑博览群 + 陆家嘴天际线，上海最佳日落观景点',
-        budget: '免费', detail: '17:30 左右到外滩观景平台，等日落（夏天约 18:50 日落）。\n\n日落前拍黄浦江两岸的「黄金时刻」，日落后等陆家嘴亮灯（约 19:00），浦西老建筑也会亮灯。\n\n外滩观景平台从外白渡桥（北）到十六铺码头（南）全长 1.5km，夜景一路走一路看。\n\n📸 最佳机位：外白渡桥上看陆家嘴、延安东路外滩信号塔附近拍万国建筑群。\n\n看完夜景去广东路/福州路找本帮菜馆吃晚饭，比外滩沿线的便宜一半以上。',
+        desc: '万国建筑博览群 + 陆家嘴天际线，上海最佳日落观景台',
+        budget: '免费', detail: '17:30 到外滩观景平台，等日落（夏天约 18:50）。日落前拍「黄金时刻」，日落后等陆家嘴亮灯（约 19:00）。全长 1.5km。看完去广东路/福州路吃本帮菜，比外滩沿线便宜一半以上。',
         pay: { alipay: 1, wechat: 1 },
-        gmap: '上海外滩', xhsKeyword: '外滩 夜景 机位 日落' },
+        gmap: '上海外滩', xhsKeyword: '外滩 夜景 机位 日落',
+        nearbyRestos: [
+          { name: '大壶春', lat: 31.238, lng: 121.492, desc: '上海生煎包鼻祖（四川中路店），全发酵面皮+肉馅，比小杨生煎更正宗', budget: '¥20-40/人', xhs: '大壶春 生煎 上海', dp: '大壶春 四川中路' },
+          { name: '蟹尊苑', lat: 31.237, lng: 121.490, desc: '外滩附近吃蟹专门店，「蟹粉捞饭」「蟹粉面」满满的蟹黄，人均 ¥150', budget: '¥120-200/人', xhs: '蟹尊苑 蟹粉面 上海', dp: '蟹尊苑 外滩' }
+        ]
+      },
     ]
   },
   {
-    id: 5, label: 'D5 苏州', date: 'Day 5 · 园林之冠', title: '上海→苏州 · 拙政园', color: '#007aff',
+    id: 6, label: 'D6 苏州', date: 'Day 6 · 园林水巷', title: '上海→苏州→南京 · 拙政园+平江路', color: '#007aff',
     locations: [
-      { name: '上海虹桥→苏州站', lat: 31.193964, lng: 121.320081, type: 'transport', time: '08:30',
-        desc: 'G 字头高铁，约 30 分钟，二等座 ¥39',
-        budget: '¥39', detail: '上海虹桥到苏州站（注意是苏州站，不是苏州北站，北站在相城区太远了）。\n\n半小时就到，几乎是城际通勤的距离。建议买 8:00-9:00 的班次。\n\n苏州站出来就是护城河，坐游 1 路公交或打车 10 分钟到拙政园。',
+      { name: '上海虹桥→苏州站', lat: 31.193964, lng: 121.320081, type: 'transport', time: '08:00',
+        desc: 'G 字头高铁约 30 分钟，二等座 ¥39。务必到苏州站（非苏州北站）',
+        budget: '¥39', detail: '上海虹桥到苏州站（非苏州北站！北站在相城区太远）。半小时就到。苏州站出来坐游 1 路公交或打车 10 分钟到拙政园。',
         pay: { alipay: 1, wechat: 1 },
         gmap: '上海虹桥站' },
-      { name: '拙政园', lat: 31.324000, lng: 120.628659, type: 'spot', time: '10:00',
+      { name: '拙政园', lat: 31.324000, lng: 120.628659, type: 'spot', time: '09:30',
         desc: '中国四大名园之首，明代文徵明参与设计，苏州园林的巅峰',
-        budget: '¥80', detail: '⚠️ 必须提前在"苏州园林官微"微信公众号预约！旺季现场根本买不到票。\n\n园子不大但处处是景，建议请个讲解（¥100）或租个讲解器（¥30），不然就是"看石头看水看亭子"走马观花。\n\n核心看点：远香堂（主厅，借景北寺塔经典构图）、卅六鸳鸯馆（彩色玻璃窗很美）、与谁同坐轩（扇形小亭子，文徵明手笔）。\n\n游览约 1.5-2 小时，出来往东走 3 分钟就是苏州博物馆。',
+        budget: '¥80', detail: '⚠️ 必须提前在"苏州园林官微"微信公众号预约！建议请讲解（¥100）或租讲解器（¥30）。核心看点：远香堂（借景北寺塔）、卅六鸳鸯馆（彩色玻璃窗）、与谁同坐轩。游览约 1.5-2 小时。',
         pay: { alipay: 1, wechat: 1, card: 1, cash: 1 },
-        gmap: '苏州拙政园', reserve: 'https://www.szzgy.cn/', xhsKeyword: '拙政园 攻略 预约 值得看' },
-      { name: '苏州博物馆', lat: 31.320489, lng: 120.627701, type: 'spot', time: '13:00',
-        desc: '贝聿铭封山之作，建筑本身就是展品',
-        budget: '免费（需预约）', detail: '⚠️ 苏博非常难约！必须提前 7 天在"苏州博物馆"微信公众号预约，每天限流。\n\n即使对文物不感兴趣，贝聿铭设计的建筑也值得一看：几何造型的白墙 + 片石假山 + 水景倒影，很有现代苏州的感觉。\n\n镇馆之宝：真珠舍利宝幢、秘色瓷莲花碗。\n\n游览约 1-1.5 小时。如果约不到，隔壁的苏州园林博物馆（免费免预约）也可以看看，人少很多。',
+        gmap: '苏州拙政园', reserve: 'https://www.szzgy.cn/', xhsKeyword: '拙政园 攻略 预约 值得看',
+        nearbyRestos: [
+          { name: '吴门人家', lat: 31.323, lng: 120.629, desc: '拙政园旁老牌苏帮菜，非遗传承，「松鼠鳜鱼」「响油鳝糊」「樱桃肉」地道', budget: '¥100-150/人', xhs: '吴门人家 苏帮菜 拙政园', dp: '吴门人家 拙政园' },
+          { name: '裕兴记', lat: 31.322, lng: 120.627, desc: '苏州面馆头牌，「三虾面」「秃黄油面」季节限定，¥100+一碗但值得尝', budget: '¥60-150/人', xhs: '裕兴记 三虾面 苏州', dp: '裕兴记 拙政园' }
+        ]
+      },
+      { name: '苏州博物馆', lat: 31.320489, lng: 120.627701, type: 'spot', time: '12:00',
+        desc: '贝聿铭封山之作，建筑本身就是展品（快速浏览）',
+        budget: '免费（需预约）', detail: '⚠️ 必须提前 7 天在"苏州博物馆"微信公众号预约。如约不到，隔壁苏州园林博物馆（免费免预约）也不错。建筑比藏品更值得看。快速浏览 45 分钟。',
         pay: { alipay: 1, wechat: 1 },
         gmap: '苏州博物馆', xhsKeyword: '苏州博物馆 贝聿铭 预约 拍照' },
-      { name: '平江路 · 晚餐', lat: 31.316000, lng: 120.634000, type: 'food', time: '17:30',
-        desc: '千年水巷，小桥流水 + 茶馆 + 苏帮菜',
-        budget: '¥80-150/人', detail: '苏州最完整的水巷民居街区，比山塘街更生活化。傍晚灯笼亮起来特别有感觉。\n\n晚餐推荐：\n• 松鹤楼（苏帮菜老字号，松鼠鳜鱼是招牌，人均 ¥150）\n• 得月楼（另一家老字号，比松鹤楼便宜一点）\n• 哑巴生煎（平江路附近的临顿路店，苏州生煎天花板）\n\n饭后沿平江路走到耦园附近，灯光水影，比白天更美。\n\n或者找个沿河的茶馆喝碧螺春，听评弹（¥50-80/人），体验苏州慢生活。',
+      { name: '平江路 · 午餐+漫步', lat: 31.316000, lng: 120.634000, type: 'food', time: '13:30',
+        desc: '千年水巷，小桥流水 + 茶馆 + 苏帮菜，苏州必逛',
+        budget: '¥80-150/人', detail: '午餐推荐：松鹤楼（苏帮菜老字号，松鼠鳜鱼是招牌）、得月楼、哑巴生煎。饭后沿平江路走到耦园附近，找个沿河的茶馆喝碧螺春听评弹（¥50-80/人）。',
         pay: { alipay: 1, wechat: 1, card: 1, cash: 1 },
-        dianpingKeyword: '平江路 苏帮菜 推荐', xhsKeyword: '平江路 美食 夜景 茶馆' },
-    ]
-  },
-  {
-    id: 6, label: 'D6 姑苏', date: 'Day 6 · 小桥流水', title: '苏州 · 古城深处', color: '#007aff',
-    locations: [
-      { name: '山塘街', lat: 31.315385, lng: 120.603229, type: 'spot', time: '09:00',
-        desc: '"七里山塘到虎丘"，苏州最有烟火气的水巷',
-        budget: '免费', detail: '山塘街分两段：东段（新民桥以东）商业化重，西段（新民桥以西）才是真正的老苏州。\n\n推荐路线：从山塘街西端（虎丘方向）往东走，一路是本地人生活区：菜场、茶馆、老式理发店、点心铺。\n\n必吃：\n• 荣阳楼（山塘街 329 号，百年老店，生煎和油氽团子一绝）\n• 万福兴（糕团店，薄荷糕、赤豆糕、桂花糕）\n• 赵元章肉骨烧（山塘街上，走累了来一根）\n\n走到新民桥附近，可以在河边茶馆坐坐，听摇橹船吱呀吱呀划过。',
-        pay: { alipay: 1, wechat: 1, cash: 1 },
-        gmap: '苏州山塘街', xhsKeyword: '山塘街 本地人 推荐 小吃' },
-      { name: '虎丘 · 备选', lat: 31.338000, lng: 120.582000, type: 'spot', time: '—',
-        desc: '苏轼说"到苏州不游虎丘乃憾事也"，中国第一斜塔云岩寺塔',
-        budget: '¥80', detail: '如果在山塘街西端逛得意犹未尽，可以继续往西走到虎丘（约 1km），或者坐摇橹船从山塘街到虎丘（¥100/人，约 25 分钟，很有感觉）。\n\n虎丘不大，核心看云岩寺塔（倾斜 3°59′，比意大利比萨斜塔还早 200 年）和剑池。1-1.5 小时足够。\n\n如果对园林已经审美疲劳了可以跳过，山塘街逛深一点更有苏州味道。',
-        pay: { alipay: 1, wechat: 1, cash: 1 },
-        gmap: '苏州虎丘' },
-      { name: '苏州站→南京南', lat: 31.329683, lng: 120.610870, type: 'transport', time: '16:30',
-        desc: 'G 字头高铁，约 1 小时 10 分，二等座 ¥105',
-        budget: '¥105', detail: '建议买 16:00-17:00 的班次，傍晚到南京。\n\n南京南站是亚洲最大高铁站之一，出站后地铁 3 号线进市区很方便。\n\n酒店建议订在夫子庙/新街口区域，晚上放下行李就能出来逛秦淮河。',
+        dianpingKeyword: '平江路 苏帮菜 推荐', xhsKeyword: '平江路 美食 茶馆',
+        nearbyRestos: [
+          { name: '松鹤楼', lat: 31.317, lng: 120.633, desc: '始创1737年，苏帮菜头牌，「松鼠鳜鱼」教科书级别，人均 ¥150', budget: '¥120-180/人', xhs: '松鹤楼 松鼠鳜鱼', dp: '松鹤楼 平江路' },
+          { name: '哑巴生煎', lat: 31.317, lng: 120.632, desc: '临顿路上的苏州生煎天花板，皮薄底脆汤汁多，排队也值，¥15/8个', budget: '¥15-25/人', xhs: '哑巴生煎 苏州 排队', dp: '哑巴生煎 临顿路' },
+          { name: '桃花源记', lat: 31.316, lng: 120.635, desc: '平江路上的人气小吃，「赤豆小圆子」「糖粥」「鸡头米」苏州甜味代表', budget: '¥30-50/人', xhs: '桃花源记 平江路 糖粥', dp: '桃花源记 平江路' },
+          { name: '鸡脚旮旯', lat: 31.315, lng: 120.635, desc: '平江路网红小吃，「卤鸡爪」「鸭舌」边走边啃，排队但走得快', budget: '¥15-25/人', xhs: '鸡脚旮旯 平江路', dp: '鸡脚旮旯 平江路' }
+        ]
+      },
+      { name: '苏州站→南京南', lat: 31.329683, lng: 120.610870, type: 'transport', time: '17:00',
+        desc: 'G 字头高铁约 1 小时 10 分，二等座 ¥105。傍晚到南京',
+        budget: '¥105', detail: '苏州站→南京南站。南京南站出站后地铁 3 号线进市区。酒店建议订在夫子庙/新街口区域，放下行李出来逛秦淮河。',
         pay: { alipay: 1, wechat: 1 },
         gmap: '苏州站' },
     ]
   },
   {
-    id: 7, label: 'D7 金陵', date: 'Day 7 · 钟山风雨', title: '南京 · 中山陵秦淮', color: '#af52de',
+    id: 7, label: 'D7 金陵', date: 'Day 7 · 钟山秦淮', title: '南京 · 中山陵→秦淮→返程', color: '#af52de',
     locations: [
       { name: '中山陵 + 音乐台', lat: 32.050000, lng: 118.854000, type: 'spot', time: '08:30',
-        desc: '孙中山先生陵寝，392 级台阶象征当年三亿九千二百万同胞',
-        budget: '免费（需预约）', detail: '⚠️ 提前在"南京钟山风景区"微信公众号预约，当天基本约不到。\n\n建议早上第一批进去（8:30 开门），人少、凉快、光影好。392 级台阶爬上去回头看的视角很震撼——设计精妙之处是"只见台不见阶"。\n\n音乐台在中山陵下面，鸽子成群飞起来很美（¥10）。\n\n整个钟山风景区非常大（明孝陵、灵谷寺、美龄宫都在一起），如果时间体力有限只去中山陵+音乐台就够了。\n\n🕊️ 音乐台的鸽子 9-10 点最活跃，带点玉米粒去喂。',
+        desc: '孙中山先生陵寝，392 级台阶 + 音乐台鸽群',
+        budget: '免费（需预约）+ 音乐台 ¥10', detail: '⚠️ 提前在"南京钟山风景区"微信公众号预约。早上第一批进去（8:30），人少凉快。音乐台下鸽子 9-10 点最活跃。如果时间体力有限只去中山陵+音乐台就够了。',
         pay: { alipay: 1, wechat: 1, cash: 0.5 },
-        gmap: '南京中山陵', xhsKeyword: '中山陵 预约 攻略 拍照' },
-      { name: '南京大排档 · 午餐', lat: 32.040000, lng: 118.800000, type: 'food', time: '12:30',
-        desc: '一站式南京小吃体验，盐水鸭+鸭血粉丝汤+美龄粥',
-        budget: '¥60-80/人', detail: '南京大排档是连锁但做得不差，尤其是狮子桥总店。推荐：\n\n• 盐水鸭（南京名片，皮白肉红骨绿）\n• 鸭血粉丝汤（料足汤鲜）\n• 美龄粥（豆浆煮的甜粥，宋美龄最爱）\n• 糖芋苗（桂花糖水小芋头）\n• 天王烤鸭包（是包子不是烤鸭，里面包的是烤鸭肉馅）\n\n如果想找更地道的，可以去李记清真馆（打钉巷 1 号，牛肉锅贴一绝）或章云板鸭（评事街 208 号）。',
+        gmap: '南京中山陵', xhsKeyword: '中山陵 预约 攻略 拍照',
+        nearbyRestos: [
+          { name: '南京大排档·中山陵店', lat: 32.045, lng: 118.850, desc: '景区内最方便的南京小吃一站，「美龄粥」「盐水鸭」「天王烤鸭包」', budget: '¥60-80/人', xhs: '南京大排档 中山陵', dp: '南京大排档 中山陵' },
+          { name: '回味鸭血粉丝汤', lat: 32.042, lng: 118.848, desc: '南京鸭血粉丝连锁标杆，汤鲜料足，景区附近也能吃到正经味道', budget: '¥20-35/人', xhs: '回味 鸭血粉丝汤 南京', dp: '回味鸭血粉丝 中山陵' }
+        ]
+      },
+      { name: '李记清真馆 · 午餐', lat: 32.028000, lng: 118.781000, type: 'food', time: '12:30',
+        desc: '南京必吃榜常客，「牛肉锅贴」南京第一，打钉巷1号',
+        budget: '¥30-50/人', detail: '从中山陵打车约 20 分钟过来。必点：牛肉锅贴（外酥里嫩、一口爆汁）、牛肉馄饨、牛杂汤。排队很长但翻台快，值得等。\n\n旁边的章云板鸭（评事街208号）顺路买半只盐水鸭带回家，南京人从小吃到大的味道。',
         pay: { alipay: 1, wechat: 1, cash: 1 },
-        dianpingKeyword: '南京大排档 推荐菜', xhsKeyword: '南京 美食 鸭血粉丝汤 推荐' },
-      { name: '夫子庙 · 秦淮河夜游', lat: 32.020935, lng: 118.790958, type: 'spot', time: '18:00',
-        desc: '六朝金粉，秦淮灯影，南京最有故事感的夜',
-        budget: '夫子庙 ¥30 + 游船 ¥80', detail: '夫子庙区域白天一般，晚上才是正确的打开方式。\n\n建议路线：江南贡院（中国科举博物馆，建在地下非常震撼，值得进去）→ 夫子庙大成殿 → 坐秦淮河画舫（东线走内秦淮，40 分钟，晚上最值）。\n\n游船全程有讲解，讲秦淮八艳、王谢故居、乌衣巷这些典故，六朝故事配上两岸灯光，很有感觉。\n\n⚠️ 夫子庙小吃不要在主街上买（又贵又难吃）。往旁边巷子走：\n• 莲湖糕团店（贡院西街 24 号，赤豆元宵、马蹄糕）\n• 蒋有记（老门东内，牛肉锅贴 + 牛肉汤，南京人从小吃到大）',
+        dianpingKeyword: '李记清真馆 牛肉锅贴', xhsKeyword: '南京 李记清真馆 锅贴',
+        nearbyRestos: [
+          { name: '章云板鸭', lat: 32.026, lng: 120.779, desc: '评事街老店，南京盐水鸭标杆，「盐水鸭」「烤鸭」打包带走，半只 ¥30-40', budget: '¥30-50/人', xhs: '章云板鸭 南京 必买', dp: '章云板鸭 评事街' },
+          { name: '草桥锅贴', lat: 32.028, lng: 120.780, desc: '李记隔壁的另一家老字号锅贴，排队比李记短，味道不输', budget: '¥20-35/人', xhs: '草桥锅贴 南京', dp: '草桥锅贴' }
+        ]
+      },
+      { name: '夫子庙 · 秦淮河', lat: 32.020935, lng: 118.790958, type: 'spot', time: '15:00',
+        desc: '六朝金粉，秦淮灯影，南京最有故事感的下午+傍晚',
+        budget: '夫子庙 ¥30 + 游船 ¥80', detail: '下午逛江南贡院（科举博物馆建在地下很震撼）→ 夫子庙大成殿 → 傍晚坐秦淮河画舫（40 分钟，天刚黑时最漂亮）。夫子庙小吃别在主街上买！往旁边巷子走：莲湖糕团店（赤豆元宵）、蒋有记（牛肉锅贴）。\n\n吃完饭去南京南站（地铁 3 号线 25 分钟），各大城市高铁直达。祝你旅途愉快 🎉',
         pay: { alipay: 1, wechat: 1, card: 1, cash: 1 },
-        gmap: '南京夫子庙', xhsKeyword: '夫子庙 秦淮河 夜游 值不值得' },
-    ]
-  },
-  {
-    id: 8, label: 'D8 博古', date: 'Day 8 · 博古通今', title: '南京 · 博物院返程', color: '#af52de',
-    locations: [
-      { name: '南京博物院', lat: 32.040802, lng: 118.825064, type: 'spot', time: '09:00',
-        desc: '中国三大博物馆之一，仅次于故宫和国博，免费但需预约',
-        budget: '免费（需预约）', detail: '⚠️ 在"南京博物院"微信公众号提前预约！旺季非常抢手。\n\n南博很大，如果时间有限（半天），优先看：\n• 历史馆（1F）：从远古到明清的江苏通史，镇馆之宝多在这里\n• 民国馆（B1）：复原民国南京街景，拍照超好看，像穿越了\n• 特展馆（2F）：看当期特展\n\n镇馆之宝：金缕玉衣、竹林七贤砖画、银缕玉衣、大报恩寺琉璃拱门。\n\n游览约 2-3 小时。出门左转就是明故宫遗址公园（免费），可以顺便看一眼。',
-        pay: { alipay: 1, wechat: 1 },
-        gmap: '南京博物院', xhsKeyword: '南京博物院 必看 攻略 预约' },
-      { name: '玄武湖', lat: 32.072217, lng: 118.801541, type: 'spot', time: '14:00',
-        desc: '南京的城市绿肺，玄武门→樱洲→梁洲，远眺紫金山',
-        budget: '免费', detail: '从南博出来坐地铁 2 号线到玄武门站，出来就是玄武湖。\n\n不用绕湖一圈（太大了，一圈 9.5km），走玄武门→环洲→樱洲→梁洲这段就够了，大约 2km。\n\n在梁洲上找个长椅坐着看紫金山和南京天际线，是离开南京前最好的收尾。\n\n如果时间紧，玄武湖可以直接跳过，从南博出来就去南京南站。但如果有 2 小时空档，来坐坐很舒服。',
-        pay: { alipay: 1, wechat: 1 },
-        gmap: '南京玄武湖', xhsKeyword: '玄武湖 散步 看日落' },
-      { name: '南京南站 · 返程', lat: 31.970968, lng: 118.796786, type: 'transport', time: '16:00',
-        desc: '地铁 1 号线直达南京南站，各大城市高铁直达',
-        budget: '视目的地而定', detail: '从玄武门坐地铁 1 号线 25 分钟到南京南站。\n\n南京南站有直达全国各大城市的高铁：\n• 北京 3.5h, ¥445\n• 武汉 3h, ¥258\n• 杭州 1.5h, ¥118\n• 上海 1.5h, ¥135\n\n祝你旅途愉快 🎉',
+        gmap: '南京夫子庙', xhsKeyword: '夫子庙 秦淮河 游船 值不值得',
+        nearbyRestos: [
+          { name: '莲湖糕团店', lat: 32.020, lng: 118.789, desc: '贡院西街24号，南京糕团代表，「赤豆元宵」「马蹄糕」「桂花糖芋苗」', budget: '¥15-30/人', xhs: '莲湖糕团店 夫子庙', dp: '莲湖糕团店 夫子庙' },
+          { name: '蒋有记', lat: 32.013, lng: 118.791, desc: '老门东内的百年老店，「牛肉锅贴」「牛肉汤」南京人从小吃到大', budget: '¥20-40/人', xhs: '蒋有记 老门东 锅贴', dp: '蒋有记 老门东' },
+          { name: '咸亨酒店·夫子庙', lat: 32.021, lng: 118.790, desc: '鲁迅笔下的咸亨酒店，夫子庙分店，「茴香豆」「臭豆腐」「黄酒奶茶」', budget: '¥40-80/人', xhs: '咸亨酒店 夫子庙', dp: '咸亨酒店 夫子庙' }
+        ]
+      },
+      { name: '南京南站 · 返程', lat: 31.970968, lng: 118.796786, type: 'transport', time: '19:00',
+        desc: '地铁 3 号线直达南京南站，各大城市高铁直达',
+        budget: '视目的地而定', detail: '地铁 3 号线约 25 分钟到南京南站。南京南站直达全国各大城市：北京 3.5h/¥445、武汉 3h/¥258、杭州 1.5h/¥118、上海 1.5h/¥135。祝你旅途愉快 🎉',
         pay: { alipay: 1, wechat: 1, card: 1 },
         gmap: '南京南站' },
     ]
   },
 ];
 
+// ═══════════════════════════════════════════════════
+//  OVERVIEW CONTENT
+// ═══════════════════════════════════════════════════
 function overviewContent() {
   return `
-<div class="hero"><h1>杭沪苏宁 · 江南四城</h1><p class="subtitle">杭州 → 上海 → 苏州 → 南京 · 8 天 7 晚 · 高铁环线</p></div>
+<div class="hero"><h1>杭沪苏宁 · 江南四城</h1><p class="subtitle">杭州 → 上海 → 苏州 → 南京 · 7 天 6 晚 · 高铁环线含迪士尼</p></div>
 <div class="info-grid">
   <div class="info-card"><div class="label">路线</div><div class="value">杭州 → 上海 → 苏州 → 南京</div></div>
   <div class="info-card"><div class="label">交通</div><div class="value">全程高铁（4 段，¥362）</div></div>
   <div class="info-card"><div class="label">节奏</div><div class="value">均衡 · 一天一个主区域</div></div>
-  <div class="info-card"><div class="label">预估费用</div><div class="value">¥3,500-5,500/人</div></div>
+  <div class="info-card"><div class="label">预估费用</div><div class="value">¥4,500-7,000/人（含迪士尼）</div></div>
+</div>
+<div class="disney-banner">
+  <h3>🏰 D4 上海迪士尼乐园</h3>
+  <p>第 4 天全天留给迪士尼！七大园区 + 花车巡游 + 烟花秀，记得提前买票 &amp; 下载 App</p>
 </div>
 <div class="section-head">行程概览</div>
 <div class="day-list">${DAYS.slice(1).map(d=>`<div class="card" onclick="go(${d.id})"><div class="name"><span class="dot" style="background:${d.color}"></span>${d.label} · ${d.title}</div><div class="desc">${d.date}</div></div>`).join('')}</div>
 <div class="section-head">支付提醒</div>
 <div class="pay-summary"><h4>💳 全程通用</h4>支付宝 / 微信支付覆盖所有场景，现金需求很低。<br><span class="ok-text">✓ 支付宝扫码</span> · <span class="ok-text">✓ 微信支付</span> · <span class="warn">⚠ 部分小摊只收现金</span></div>
-<div class="pay-summary"><h4>🎫 需要预约的</h4><span class="warn">灵隐寺、拙政园、苏州博物馆、中山陵、南京博物院</span> —— 旺季必须提前 3-7 天在微信公众号预约，否则大概率进不去。</div>
-<div class="pay-summary"><h4>🗺️ 高德地图 App</h4>点任意地点的"📍 导航"按钮 → 选择"🧭 高德地图 App"即可跳转导航。杭州/上海/苏州/南京的公交地铁都可以在高德搜到实时班次。</div>
+<div class="pay-summary"><h4>🎫 需要预约的</h4><span class="warn">灵隐寺、迪士尼、拙政园、苏州博物馆、中山陵</span> —— 旺季必须提前 3-7 天在微信公众号或官方 App 预约，否则大概率进不去。</div>
+<div class="pay-summary"><h4>🔗 小红书 / 大众点评</h4>点击按钮即可搜索对应餐厅或景点的最新评价。桌面端直接打开网页版；手机端优先唤起 App。<br><span class="warn">⚠ 手机端需安装对应 App 才能唤起</span></div>
 <div class="section-head">图例</div>
 <div class="legend">
   <div class="legend-item"><div class="legend-dot" style="background:var(--tint-red)"></div>餐厅</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--tint-blue)"></div>景点</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--tint-purple)"></div>酒吧</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--tint-pink)"></div>迪士尼</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--tint-orange)"></div>交通</div>
 </div>
 <div class="section-head">设计理念</div>
 <div class="pay-summary">
 <strong>为什么这样排：</strong><br>
 • 杭州放前两站——先慢后快，西湖和灵隐需要放松的心情<br>
-• 上海放在中间——都市节奏作为转换，不疲劳<br>
-• 苏州→南京后半段——园林看完看古都，越走越厚重<br>
+• 第 4 天迪士尼——避开周末（如遇周末可灵活对调 D4/D5）<br>
+• 苏州第 6 天一日精华——拙政园+平江路，晚上直奔南京<br>
 • 全程高铁串联，每段不超过 1.5 小时<br><br>
 <strong>删掉的常见选项：</strong><br>
-• <span style="color:var(--tint-red)">周庄/同里/西塘</span> —— 8 天已经走了 4 城，再加水乡太赶<br>
-• <span style="color:var(--tint-red)">上海迪士尼</span> —— 需要一整天，跟城市旅行节奏冲突<br>
-• <span style="color:var(--tint-red)">黄山</span> —— 方向相反，需要单独一次旅行<br><br>
+• <span style="color:var(--tint-red)">上海豫园+南京路</span> —— 压缩到第 5 天半天，给迪士尼让路<br>
+• <span style="color:var(--tint-red)">苏州山塘街+虎丘</span> —— 7天行程苏州只能一日精华<br>
+• <span style="color:var(--tint-red)">南京博物院</span> —— 最后一天返程日不做硬性安排，感兴趣可备选<br>
+• <span style="color:var(--tint-red)">周庄/同里/西塘</span> —— 四城已够紧凑，水乡留给下次<br><br>
 <strong>天气提醒（7月）：</strong><br>
-• 四城都是高温（35°C+），上午 6-10 点是最佳户外时间<br>
+• 四城高温 35°C+，上午 6-10 点最佳户外时间<br>
 • 下午 12-15 点尽量安排室内（博物馆、商场、茶馆）<br>
-• 江南夏天随时暴雨，包里始终带把伞
+• 江南夏天随时暴雨，包里始终带把伞<br>
+• 迪士尼大部分排队在室外，做好防晒并带折叠伞
 </div>`;
 }
 
-// ═══════════════════════════════════════════════════════════
-//  ENGINE — safe fallback if Leaflet CDN fails
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  MAP ENGINE
+// ═══════════════════════════════════════════════════
 
 let map, markers = [], polylines = [];
-const emojis = { food:'🍽️', spot:'📍', hotel:'🏨', transport:'🚃', drink:'🍺' };
+const emojis = { food:'🍽️', spot:'📍', hotel:'🏨', transport:'🚃', drink:'🍺', disney:'🏰' };
 let MAP_OK = false;
 
 function initMap() {
@@ -482,6 +647,11 @@ function icon(color, emoji) {
   return L.divIcon({ className: '', html: '<div style="width:28px;height:28px;border-radius:50%;background:'+color+';border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.18)">'+(emoji||'')+'</div>', iconSize: [28,28], iconAnchor: [14,14], popupAnchor: [0,-16] });
 }
 
+function smallIcon(color, emoji) {
+  if (!MAP_OK) return null;
+  return L.divIcon({ className: '', html: '<div style="width:20px;height:20px;border-radius:50%;background:'+color+';border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:10px;box-shadow:0 1px 4px rgba(0,0,0,.15)">'+(emoji||'')+'</div>', iconSize: [20,20], iconAnchor: [10,10], popupAnchor: [0,-12] });
+}
+
 function clearMap() { if(!MAP_OK) return; markers.forEach(m=>map.removeLayer(m)); polylines.forEach(p=>map.removeLayer(p)); markers=[]; polylines=[]; }
 
 function showDay(idx) {
@@ -489,7 +659,13 @@ function showDay(idx) {
   clearMap();
   if (idx === 0) {
     const pts = [];
-    DAYS.forEach(d => d.locations.forEach(l => { if(l.lat) pts.push([l.lat,l.lng]); }));
+    DAYS.forEach(d => {
+      d.locations.forEach(l => { if(l.lat) pts.push([l.lat,l.lng]); });
+      // Also collect nearby restaurant coords
+      if (d.locations) d.locations.forEach(l => {
+        if (l.nearbyRestos) l.nearbyRestos.forEach(r => { if(r.lat) pts.push([r.lat,r.lng]); });
+      });
+    });
     if(pts.length) map.fitBounds(pts, {padding:[30,30]});
     DAYS.slice(1).forEach(d => {
       d.locations.filter(l=>l.time!=='—').forEach(l => {
@@ -504,14 +680,26 @@ function showDay(idx) {
   const coords = [];
   day.locations.forEach(l => {
     if(!l.lat) return;
-    const ico = icon(day.color, emojis[l.type]||'📌');
-    const m = ico ? L.marker([l.lat,l.lng], { icon: ico }).addTo(map) : L.circleMarker([l.lat,l.lng], { radius:6, fillColor:day.color, color:'#fff', weight:2, fillOpacity:.9 }).addTo(map);
-    const gmapQ = l.gmap||encodeURIComponent(l.name);
-    m.bindPopup('<b>'+l.name+'</b>'+(l.time!=='—'?'<br><span style="color:#86868b">'+l.time+'</span>':'')+'<br>'+l.desc+(l.budget?'<br><span style="color:#ff9500">'+l.budget+'</span>':'')+'<br><a href="#" onclick="event.preventDefault();openAS(\''+l.name.replace(/'/g,"\\'")+'\','+l.lat+','+l.lng+',\''+gmapQ+'\')">📍 导航</a>');
-    markers.push(m);
-    if(l.time!=='—') coords.push([l.lat,l.lng]);
+    if (l.time !== '—') {
+      const ico = icon(day.color, emojis[l.type]||'📌');
+      const m = ico ? L.marker([l.lat,l.lng], { icon: ico }).addTo(map) : L.circleMarker([l.lat,l.lng], { radius:6, fillColor:day.color, color:'#fff', weight:2, fillOpacity:.9 }).addTo(map);
+      const gmapQ = l.gmap||encodeURIComponent(l.name);
+      m.bindPopup('<b>'+l.name+'</b>'+(l.time!=='—'?'<br><span style="color:#86868b">'+l.time+'</span>':'')+'<br>'+l.desc+(l.budget?'<br><span style="color:#ff9500">'+l.budget+'</span>':'')+'<br><a href="#" onclick="event.preventDefault();openAS(\''+l.name.replace(/'/g,"\\'")+'\','+l.lat+','+l.lng+',\''+gmapQ+'\')">📍 导航</a>');
+      markers.push(m);
+      coords.push([l.lat,l.lng]);
+    }
+    // Plot nearby restaurants as small red dots
+    if (l.nearbyRestos) {
+      l.nearbyRestos.forEach(r => {
+        if(!r.lat) return;
+        const sico = smallIcon('#ff3b30', '🍽');
+        const m = sico ? L.marker([r.lat,r.lng], { icon: sico }).addTo(map) : L.circleMarker([r.lat,r.lng], { radius:3, fillColor:'#ff3b30', color:'#fff', weight:1, fillOpacity:.85 }).addTo(map);
+        m.bindPopup('<b>🍽 '+r.name+'</b><br><span style="color:#86868b">'+r.desc+'</span><br><span style="color:#ff9500">'+r.budget+'</span>');
+        markers.push(m);
+      });
+    }
   });
-  if(coords.length>1) { const pl = L.polyline(coords, { color:day.color, weight:2.5, opacity:.5, dashArray:'6,5' }).addTo(map); polylines.push(pl); }
+  if(coords.length>1) { const pl = L.polyline(coords, { color:day.color, weight:2.5, opacity:.5, dashArray:'6,5'}).addTo(map); polylines.push(pl); }
   if(coords.length) map.fitBounds(coords, { padding:[40,40], maxZoom:14 });
 }
 
@@ -528,61 +716,63 @@ function payChips(pay) {
   return h+'</div>';
 }
 
-const IN_APP_WEBVIEW = (() => {
-  const ua = (navigator.userAgent || '').toLowerCase();
-  return /micromessenger|xhs|xhsdiscover|discover\/|tiktok|aweme|weibo|qq\/|qqbrowser|alipayclient|dingtalk|lark|feishu|ucbrowser|baiduboxapp|toutiao|newsarticle/.test(ua);
-})();
-
-function xhsKeyword(loc) {
-  if(loc.xhsKeyword) return loc.xhsKeyword.trim();
-  return (loc.name||'').replace(/⭐.*$/g,'').replace(/（.*?）/g,'').replace(/\(.*?\)/g,'').replace(/\s+/g,' ').trim();
+// ═══════════════════════════════════════════════════
+//  RENDER: Nearby restaurant sub-cards
+// ═══════════════════════════════════════════════════
+function restoSubCards(restos, dayIdx) {
+  if (!restos || !restos.length) return '';
+  let h = '<div class="resto-group" style="margin-top:8px">';
+  restos.forEach(r => {
+    const rKey = `${dayIdx}::${r.name}`;
+    const xhsHref = xhsWebUrl({ xhsKeyword: r.xhs });
+    const dpHref = dpWebUrl({ dianpingKeyword: r.dp });
+    h += `<div class="resto-card" onclick="if(!event.target.closest('a'))toggle('r-${r.name.replace(/\\W/g,\"\")}')">
+      <div class="r-name">🍽️ ${r.name}</div>
+      <div class="r-desc">${r.desc}</div>
+      <div class="r-budget">${r.budget}</div>
+      <div class="r-links">
+        <a href="${xhsHref}" target="_blank" onclick="return smartOpen('${xhsAppUrl({xhsKeyword:r.xhs}).replace(/'/g,"\\'")}','${xhsHref}')">📕 小红书</a>
+        ${r.dp ? `<a href="${dpHref}" target="_blank" onclick="return smartOpen('${dpAppUrl({dianpingKeyword:r.dp}).replace(/'/g,"\\'")}','${dpHref}')">🍜 大众点评</a>` : ''}
+        <a href="https://uri.amap.com/marker?position=${r.lng},${r.lat}&name=${encodeURIComponent(r.name)}&src=trip" target="_blank">📍 导航</a>
+      </div>
+    </div>`;
+  });
+  h += '</div>';
+  return h;
 }
-function xhsAppUrl(loc) { return `xhsdiscover://search/result?keyword=${encodeURIComponent(xhsKeyword(loc))}&target_search=notes&source=deeplink`; }
-function xhsWebUrl(loc) { return `https://www.xiaohongshu.com/search_result?keyword=${encodeURIComponent(xhsKeyword(loc))}&source=web_explore_feed`; }
 
-function dpKeyword(loc) {
-  if(loc.dianpingKeyword) return loc.dianpingKeyword.trim();
-  return (loc.name||'').replace(/⭐.*$/g,'').replace(/（.*?）/g,'').replace(/\(.*?\)/g,'').replace(/\s+/g,' ').trim();
-}
-function dpAppUrl(loc) { return `dianping://searchshoplist?keyword=${encodeURIComponent(dpKeyword(loc))}`; }
-function dpWebUrl(loc) { return `https://m.dianping.com/searchshop?keyword=${encodeURIComponent(dpKeyword(loc))}`; }
-
-window._extLocs = {};
-DAYS.forEach(d => d.locations.forEach(l => { window._extLocs[`${d.id}::${l.name}`] = l; }));
-
-function openExt(key, kind) {
-  const loc = window._extLocs[key]; if(!loc) return false;
-  if (IN_APP_WEBVIEW) {
-    window.location.href = kind==='dp' ? dpWebUrl(loc) : xhsWebUrl(loc);
-  } else {
-    window.location.href = kind==='dp' ? dpAppUrl(loc) : xhsAppUrl(loc);
-  }
-  return false;
-}
-function openXhs(key) { return openExt(key, 'xhs'); }
-function openDp(key)  { return openExt(key, 'dp'); }
-
+// ═══════════════════════════════════════════════════
+//  RENDER: Day location cards
+// ═══════════════════════════════════════════════════
 function locCard(loc, dayIdx) {
-  const dot = loc.type==='food'?'food':loc.type==='spot'?'spot':loc.type==='drink'?'drink':loc.type==='hotel'?'hotel':'transport';
-  const bdg = loc.type==='food'?'<span class="badge food">餐</span>':loc.type==='spot'?'<span class="badge spot">景</span>':loc.type==='drink'?'<span class="badge drink">饮</span>':'';
-  const uid = `d${dayIdx}-${loc.name.replace(/\W/g,'')}`;
+  const dot = loc.type==='food'?'food':loc.type==='spot'?'spot':loc.type==='drink'?'drink':loc.type==='disney'?'disney':loc.type==='hotel'?'hotel':'transport';
+  const bdg = loc.type==='food'?'<span class="badge food">餐</span>':loc.type==='spot'?'<span class="badge spot">景</span>':loc.type==='drink'?'<span class="badge drink">饮</span>':loc.type==='disney'?'<span class="badge disney">🏰</span>':'';
+  const uid = `d${dayIdx}-${loc.name.replace(/\\W/g,'')}`;
   const locKey = `${dayIdx}::${loc.name}`;
   const gmapQ = loc.gmap||encodeURIComponent(loc.name);
+
+  // Build links
   let lnk = `<button class="btn nav" onclick="openAS('${loc.name.replace(/'/g,"\\'")}',${loc.lat},${loc.lng},'${gmapQ}')">📍 导航</button>`;
+
   if(loc.xhsKeyword) {
-    const xhsHref = IN_APP_WEBVIEW ? xhsWebUrl(loc) : xhsAppUrl(loc);
-    const xhsLabel = IN_APP_WEBVIEW ? '📕 小红书' : '📕 小红书 App';
-    lnk += `<a href="${xhsHref}" onclick="return openXhs('${locKey.replace(/'/g,"\\'")}')" class="btn xhs">${xhsLabel}</a>`;
+    const xhsW = xhsWebUrl(loc);
+    const xhsA = xhsAppUrl(loc);
+    lnk += `<a href="${xhsW}" target="_blank" onclick="return smartOpen('${xhsA.replace(/'/g,"\\'")}','${xhsW}')" class="btn xhs">📕 小红书</a>`;
   }
+
   const dpEnabled = loc.dianping !== false &&
     (loc.dianping || loc.dianpingKeyword || loc.type==='food' || loc.type==='drink');
   if(dpEnabled) {
-    const dpHref = IN_APP_WEBVIEW ? dpWebUrl(loc) : dpAppUrl(loc);
-    const dpLabel = IN_APP_WEBVIEW ? '🍜 大众点评' : '🍜 大众点评 App';
-    lnk += `<a href="${dpHref}" onclick="return openDp('${locKey.replace(/'/g,"\\'")}')" class="btn dp">${dpLabel}</a>`;
+    const dpW = dpWebUrl(loc);
+    const dpA = dpAppUrl(loc);
+    lnk += `<a href="${dpW}" target="_blank" onclick="return smartOpen('${dpA.replace(/'/g,"\\'")}','${dpW}')" class="btn dp">🍜 大众点评</a>`;
   }
+
   if(loc.reserve) lnk += `<a href="${loc.reserve}" target="_blank" class="btn rsv">📅 预约</a>`;
-  return `<div class="tl-item"><div class="tl-dot ${dot}"></div><div class="card" onclick="if(!event.target.closest('.btn,.links'))toggle('${uid}')"><div class="time">${loc.time!=='—'?loc.time:'备选'}</div><div class="name">${bdg} ${loc.name}</div><div class="desc">${loc.desc}</div>${loc.budget?'<div class="budget">'+loc.budget+'</div>':''}${payChips(loc.pay)}<div class="links">${lnk}</div>${loc.detail?'<div class="details" id="'+uid+'">'+loc.detail.replace(/\n/g,'<br>')+'</div>':''}</div></div>`;
+
+  const restoHtml = restoSubCards(loc.nearbyRestos, dayIdx);
+
+  return `<div class="tl-item"><div class="tl-dot ${dot}"></div><div class="card" onclick="if(!event.target.closest('.btn,.links,.resto-card a,.r-links a'))toggle('${uid}')"><div class="time">${loc.time!=='—'?loc.time:'备选'}</div><div class="name">${bdg} ${loc.name}</div><div class="desc">${loc.desc}</div>${loc.budget?'<div class="budget">'+loc.budget+'</div>':''}${payChips(loc.pay)}<div class="links">${lnk}</div>${loc.detail?'<div class="details closed" id="'+uid+'">'+loc.detail.replace(/\\n/g,'<br>')+'</div>':''}${restoHtml}</div></div>`;
 }
 
 function renderDay(idx) {
@@ -601,7 +791,7 @@ const contentEl = document.getElementById('content');
 
 DAYS.forEach(d => {
   const btn = document.createElement('button');
-  btn.className = 'tab' + (d.id===0?' active':'');
+  btn.className = 'tab' + (d.id===0?' active':'') + (d.id===4?' disney-tab':'');
   btn.dataset.day = d.id;
   btn.textContent = d.label;
   tabsEl.appendChild(btn);
