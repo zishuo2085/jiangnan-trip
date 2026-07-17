@@ -11,9 +11,16 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to gh-pages
-        uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .
-          exclude_assets: '.github,.git'
+          fetch-depth: 0
+
+      - name: Deploy to gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout gh-pages 2>/dev/null || git checkout --orphan gh-pages
+          git rm -rf . 2>/dev/null || true
+          git checkout master -- index.html leaflet.css leaflet.js
+          git add index.html leaflet.css leaflet.js
+          git diff --staged --quiet || git commit -m "deploy: sync from master [skip ci]"
+          git push origin gh-pages
