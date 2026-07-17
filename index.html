@@ -723,19 +723,23 @@ function restoSubCards(restos, dayIdx) {
   if (!restos || !restos.length) return '';
   let h = '<div class="resto-group" style="margin-top:8px">';
   restos.forEach(r => {
-    const rKey = `${dayIdx}::${r.name}`;
-    const xhsHref = xhsWebUrl({ xhsKeyword: r.xhs });
-    const dpHref = dpWebUrl({ dianpingKeyword: r.dp });
-    h += `<div class="resto-card" onclick="if(!event.target.closest('a'))toggle('r-${r.name.replace(/\\W/g,\"\")}')">
-      <div class="r-name">🍽️ ${r.name}</div>
-      <div class="r-desc">${r.desc}</div>
-      <div class="r-budget">${r.budget}</div>
-      <div class="r-links">
-        <a href="${xhsHref}" target="_blank" onclick="return smartOpen('${xhsAppUrl({xhsKeyword:r.xhs}).replace(/'/g,"\\'")}','${xhsHref}')">📕 小红书</a>
-        ${r.dp ? `<a href="${dpHref}" target="_blank" onclick="return smartOpen('${dpAppUrl({dianpingKeyword:r.dp}).replace(/'/g,"\\'")}','${dpHref}')">🍜 大众点评</a>` : ''}
-        <a href="https://uri.amap.com/marker?position=${r.lng},${r.lat}&name=${encodeURIComponent(r.name)}&src=trip" target="_blank">📍 导航</a>
-      </div>
-    </div>`;
+    var rSafeId = 'r-' + r.name.replace(/[^a-zA-Z0-9一-鿿]/g, '');
+    var xhsHref = xhsWebUrl({ xhsKeyword: r.xhs });
+    var dpHref = dpWebUrl({ dianpingKeyword: r.dp });
+    var xhsEsc = xhsAppUrl({xhsKeyword:r.xhs}).replace(/'/g, "\\'");
+    h += '<div class="resto-card" onclick="if(!event.target.closest(\'a\'))toggle(\'' + rSafeId + '\')">' +
+      '<div class="r-name">\u{1f37d}\u{fe0f} ' + r.name + '</div>' +
+      '<div class="r-desc">' + r.desc + '</div>' +
+      '<div class="r-budget">' + r.budget + '</div>' +
+      '<div class="r-links">' +
+        '<a href="' + xhsHref + '" target="_blank" onclick="return smartOpen(\'' + xhsEsc + '\',\'' + xhsHref + '\')">\u{1f4d5} 小红书</a>';
+    if (r.dp) {
+      var dpEsc = dpAppUrl({dianpingKeyword:r.dp}).replace(/'/g, "\\'");
+      h += '<a href="' + dpHref + '" target="_blank" onclick="return smartOpen(\'' + dpEsc + '\',\'' + dpHref + '\')">\u{1f439} 大众点评</a>';
+    }
+    h += '<a href="https://uri.amap.com/marker?position=' + r.lng + ',' + r.lat + '&name=' + encodeURIComponent(r.name) + '&src=trip" target="_blank">\u{1f4cd} 导航</a>' +
+      '</div>' +
+    '</div>';
   });
   h += '</div>';
   return h;
@@ -745,34 +749,42 @@ function restoSubCards(restos, dayIdx) {
 //  RENDER: Day location cards
 // ═══════════════════════════════════════════════════
 function locCard(loc, dayIdx) {
-  const dot = loc.type==='food'?'food':loc.type==='spot'?'spot':loc.type==='drink'?'drink':loc.type==='disney'?'disney':loc.type==='hotel'?'hotel':'transport';
-  const bdg = loc.type==='food'?'<span class="badge food">餐</span>':loc.type==='spot'?'<span class="badge spot">景</span>':loc.type==='drink'?'<span class="badge drink">饮</span>':loc.type==='disney'?'<span class="badge disney">🏰</span>':'';
-  const uid = `d${dayIdx}-${loc.name.replace(/\\W/g,'')}`;
-  const locKey = `${dayIdx}::${loc.name}`;
-  const gmapQ = loc.gmap||encodeURIComponent(loc.name);
+  var dot = loc.type==='food'?'food':loc.type==='spot'?'spot':loc.type==='drink'?'drink':loc.type==='disney'?'disney':loc.type==='hotel'?'hotel':'transport';
+  var bdg = loc.type==='food'?'<span class="badge food">餐</span>':loc.type==='spot'?'<span class="badge spot">景</span>':loc.type==='drink'?'<span class="badge drink">饮</span>':loc.type==='disney'?'<span class="badge disney">\u{1f3f0}</span>':'';
+  var uid = 'd' + dayIdx + '-' + loc.name.replace(/[^a-zA-Z0-9一-鿿]/g, '');
+  var locKey = dayIdx + '::' + loc.name;
+  var gmapQ = loc.gmap || encodeURIComponent(loc.name);
+  var nameEsc = loc.name.replace(/'/g, "\\'");
 
   // Build links
-  let lnk = `<button class="btn nav" onclick="openAS('${loc.name.replace(/'/g,"\\'")}',${loc.lat},${loc.lng},'${gmapQ}')">📍 导航</button>`;
+  var lnk = '<button class="btn nav" onclick="openAS(\'' + nameEsc + '\',' + loc.lat + ',' + loc.lng + ',\'' + gmapQ + '\')">\u{1f4cd} 导航</button>';
 
   if(loc.xhsKeyword) {
-    const xhsW = xhsWebUrl(loc);
-    const xhsA = xhsAppUrl(loc);
-    lnk += `<a href="${xhsW}" target="_blank" onclick="return smartOpen('${xhsA.replace(/'/g,"\\'")}','${xhsW}')" class="btn xhs">📕 小红书</a>`;
+    var xhsW = xhsWebUrl(loc);
+    var xhsA = xhsAppUrl(loc);
+    var xhsEsc = xhsA.replace(/'/g, "\\'");
+    lnk += '<a href="' + xhsW + '" target="_blank" onclick="return smartOpen(\'' + xhsEsc + '\',\'' + xhsW + '\')" class="btn xhs">\u{1f4d5} 小红书</a>';
   }
 
-  const dpEnabled = loc.dianping !== false &&
+  var dpEnabled = loc.dianping !== false &&
     (loc.dianping || loc.dianpingKeyword || loc.type==='food' || loc.type==='drink');
   if(dpEnabled) {
-    const dpW = dpWebUrl(loc);
-    const dpA = dpAppUrl(loc);
-    lnk += `<a href="${dpW}" target="_blank" onclick="return smartOpen('${dpA.replace(/'/g,"\\'")}','${dpW}')" class="btn dp">🍜 大众点评</a>`;
+    var dpW = dpWebUrl(loc);
+    var dpA = dpAppUrl(loc);
+    var dpEsc = dpA.replace(/'/g, "\\'");
+    lnk += '<a href="' + dpW + '" target="_blank" onclick="return smartOpen(\'' + dpEsc + '\',\'' + dpW + '\')" class="btn dp">\u{1f439} 大众点评</a>';
   }
 
-  if(loc.reserve) lnk += `<a href="${loc.reserve}" target="_blank" class="btn rsv">📅 预约</a>`;
+  if(loc.reserve) lnk += '<a href="' + loc.reserve + '" target="_blank" class="btn rsv">\u{1f4c5} 预约</a>';
 
-  const restoHtml = restoSubCards(loc.nearbyRestos, dayIdx);
+  var restoHtml = restoSubCards(loc.nearbyRestos, dayIdx);
 
-  return `<div class="tl-item"><div class="tl-dot ${dot}"></div><div class="card" onclick="if(!event.target.closest('.btn,.links,.resto-card a,.r-links a'))toggle('${uid}')"><div class="time">${loc.time!=='—'?loc.time:'备选'}</div><div class="name">${bdg} ${loc.name}</div><div class="desc">${loc.desc}</div>${loc.budget?'<div class="budget">'+loc.budget+'</div>':''}${payChips(loc.pay)}<div class="links">${lnk}</div>${loc.detail?'<div class="details closed" id="'+uid+'">'+loc.detail.replace(/\\n/g,'<br>')+'</div>':''}${restoHtml}</div></div>`;
+  var html = '<div class="tl-item"><div class="tl-dot ' + dot + '"></div><div class="card" onclick="if(!event.target.closest(\'.btn,.links,.resto-card a,.r-links a\'))toggle(\'' + uid + '\')"><div class="time">' + (loc.time!=='—'?loc.time:'备选') + '</div><div class="name">' + bdg + ' ' + loc.name + '</div><div class="desc">' + loc.desc + '</div>';
+  if(loc.budget) html += '<div class="budget">' + loc.budget + '</div>';
+  html += payChips(loc.pay) + '<div class="links">' + lnk + '</div>';
+  if(loc.detail) html += '<div class="details closed" id="' + uid + '">' + loc.detail.replace(/\n/g, '<br>') + '</div>';
+  html += restoHtml + '</div></div>';
+  return html;
 }
 
 function renderDay(idx) {
