@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>杭沪苏宁 · 江南四城 7 日</title>
-<meta name="description" content="杭州-上海-苏州-南京，7天6晚江南经典环线含迪士尼，自然山水 × 历史文化 × 都市吃喝">
+<title>杭沪双城 · 江南之行 6 日</title>
+<meta name="description" content="杭州-上海，6天5晚深度游含迪士尼，西湖×灵隐×法租界×外滩，自然山水 × 都市吃喝">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="leaflet.css"/>
@@ -278,12 +278,38 @@ function smartOpen(appUrl, webUrl) {
 //  TRIP DATA
 // ═══════════════════════════════════════════════════
 
-const HOTEL = { name: '全程高铁 — 每城住1-2晚', lat: 31.23, lng: 120.50 };
+const HOTEL = { name: '杭州→上海高铁 — 全程约1小时', lat: 30.50, lng: 120.80 };
 
 const DAYS = [
   { id: 0, label: '总览', color: '#0071e3', locations: [] },
   {
-    id: 1, label: 'D1 杭州', date: 'Day 1 · 西湖烟雨', title: '杭州 · 西湖环线', color: '#34c759',
+    id: 1, label: 'D1 抵达', date: 'Day 1 · 落地杭城', title: '杭州 · 抵达休整', color: '#ff9500',
+    locations: [
+      { name: '杭州萧山国际机场', lat: 30.235, lng: 120.432, type: 'transport', time: '凌晨',
+        desc: '落地杭州萧山机场，机场1号路1号。打车/地铁1号线进市区',
+        budget: '打车约 ¥80-120', detail: '萧山机场距市区约 30km。地铁 1 号线直达市区（约 1 小时，¥8）。打车约 40-50 分钟，¥80-120。\n\n凌晨到达建议打车，地铁 1 号线首班约 6:00。',
+        pay: { alipay: 1, wechat: 1 },
+        gmap: '杭州萧山国际机场' },
+      { name: '下沙宝龙广场29幢', lat: 30.312, lng: 120.384, type: 'hotel', time: '凌晨→上午',
+        desc: '钱塘区25号大街55号，下沙大学城核心区，休息调整',
+        budget: '—', detail: '从机场打车约 25 分钟到。先放下行李休整，补个觉。下沙是大学城区域，周边小吃和生活配套齐全，楼下就是宝龙广场商圈。\n\n如果饿了楼下有早餐店和便利店，推荐附近的一鸣真鲜奶吧、新丰小吃（下沙也有分店）。',
+        pay: { alipay: 1, wechat: 1 },
+        gmap: '杭州下沙宝龙广场' },
+      { name: '后市街147号·入住', lat: 30.245, lng: 120.169, type: 'hotel', time: '傍晚',
+        desc: '上城区清波街道后市街147号1单元202室，定安路地铁站D口步行290米',
+        budget: '—', detail: '从下沙打车约 40 分钟到（¥60-80），或坐地铁 1 号线定安路站。\n\n后市街位于杭州老城核心位置：\n• 步行 5 分钟到河坊街\n• 步行 10 分钟到西湖柳浪闻莺\n• 步行 3 分钟到定安路美食街\n• 旁边就是南宋御街/吴山广场\n\n晚上放下行李直接出门逛河坊街夜市，葱包烩、定胜糕、吴山烤禽都在步行范围内。',
+        pay: { alipay: 1, wechat: 1 },
+        gmap: '后市街147号 杭州上城区',
+        nearbyRestos: [
+          { name: '孙奶奶葱包桧', lat: 30.235, lng: 120.171, desc: '步行可达，中山南路391号，杭州最出名的葱包烩摊，¥5', budget: '¥5-10/人', xhs: '孙奶奶葱包桧 杭州', dp: '孙奶奶葱包桧' },
+          { name: '泮芳春煎饺(中山南路店)', lat: 30.237, lng: 120.171, desc: '步行可达，米其林推荐杭州煎饺名店，¥17', budget: '¥15-25/人', xhs: '泮芳春 煎饺 杭州', dp: '泮芳春煎饺' },
+          { name: '周萍粽子店', lat: 30.235, lng: 120.170, desc: '城隍牌楼巷17号，现包现煮嘉兴肉粽，¥13', budget: '¥10-20/人', xhs: '周萍粽子 杭州', dp: '周萍粽子店' }
+        ]
+      },
+    ]
+  },
+  {
+    id: 2, label: 'D2 杭州', date: 'Day 2 · 西湖烟雨', title: '杭州 · 西湖环线', color: '#34c759',
     locations: [
       { name: '西湖', lat: 30.259242, lng: 120.130396, type: 'spot', time: '09:00',
         desc: '环湖漫步：断桥残雪→白堤→孤山→苏堤春晓，早晨人少光影最美',
@@ -329,7 +355,7 @@ const DAYS = [
     ]
   },
   {
-    id: 2, label: 'D2 杭州', date: 'Day 2 · 灵隐问茶', title: '杭州 · 灵隐龙井', color: '#34c759',
+    id: 3, label: 'D3 杭州', date: 'Day 3 · 灵隐问茶', title: '杭州 · 灵隐龙井', color: '#34c759',
     locations: [
       { name: '灵隐寺 + 飞来峰', lat: 30.244000, lng: 120.099000, type: 'spot', time: '08:00',
         desc: '江南禅宗五山之首，飞来峰石窟群 + 灵隐寺大殿',
@@ -382,7 +408,7 @@ const DAYS = [
     ]
   },
   {
-    id: 3, label: 'D3 沪上', date: 'Day 3 · 法桐午后', title: '杭州→上海 · 法租界漫步', color: '#ff9500',
+    id: 4, label: 'D4 沪上', date: 'Day 4 · 法桐午后', title: '杭州→上海 · 法租界漫步', color: '#ff9500',
     locations: [
       { name: '杭州东→上海虹桥', lat: 30.290851, lng: 120.212600, type: 'transport', time: '09:30',
         desc: 'G 字头高铁约 1 小时，二等座 ¥73。每天 100+ 班次，随到随走',
@@ -423,7 +449,7 @@ const DAYS = [
     ]
   },
   {
-    id: 4, label: '🏰 D4 迪士尼', date: 'Day 4 · 迪士尼乐园', title: '上海 · 迪士尼魔法日', color: '#ff2d55',
+    id: 5, label: '🏰 D5 迪士尼', date: 'Day 5 · 迪士尼乐园', title: '上海 · 迪士尼魔法日', color: '#ff2d55',
     locations: [
       { name: '上海迪士尼度假区', lat: 31.144000, lng: 121.656000, type: 'spot', time: '08:00',
         desc: '中国大陆首座迪士尼乐园，七大主题园区，一整天沉浸魔法世界',
@@ -445,7 +471,7 @@ const DAYS = [
     ]
   },
   {
-    id: 5, label: 'D5 上海', date: 'Day 5 · 十里洋场', title: '上海 · 外滩豫园', color: '#ff9500',
+    id: 6, label: 'D6 上海', date: 'Day 6 · 十里洋场', title: '上海 · 外滩豫园', color: '#ff9500',
     locations: [
       { name: '豫园 + 城隍庙', lat: 31.225312, lng: 121.487633, type: 'spot', time: '09:00',
         desc: '明代江南园林 + 城隍庙小吃，上海老城厢的灵魂',
@@ -490,89 +516,6 @@ const DAYS = [
       },
     ]
   },
-  {
-    id: 6, label: 'D6 苏州', date: 'Day 6 · 园林水巷', title: '上海→苏州→南京 · 拙政园+平江路', color: '#007aff',
-    locations: [
-      { name: '上海虹桥→苏州站', lat: 31.193964, lng: 121.320081, type: 'transport', time: '08:00',
-        desc: 'G 字头高铁约 30 分钟，二等座 ¥39。务必到苏州站（非苏州北站）',
-        budget: '¥39', detail: '上海虹桥到苏州站（非苏州北站！北站在相城区太远）。半小时就到。苏州站出来坐游 1 路公交或打车 10 分钟到拙政园。',
-        pay: { alipay: 1, wechat: 1 },
-        gmap: '上海虹桥站' },
-      { name: '拙政园', lat: 31.324000, lng: 120.628659, type: 'spot', time: '09:30',
-        desc: '中国四大名园之首，明代文徵明参与设计，苏州园林的巅峰',
-        budget: '¥80', detail: '⚠️ 必须提前在"苏州园林官微"微信公众号预约！建议请讲解（¥100）或租讲解器（¥30）。核心看点：远香堂（借景北寺塔）、卅六鸳鸯馆（彩色玻璃窗）、与谁同坐轩。游览约 1.5-2 小时。',
-        pay: { alipay: 1, wechat: 1, card: 1, cash: 1 },
-        gmap: '苏州拙政园', reserve: 'https://www.szzgy.cn/', xhsKeyword: '拙政园 攻略 预约 值得看',
-        nearbyRestos: [
-          { name: '吴门人家', lat: 31.323, lng: 120.629, desc: '拙政园旁老牌苏帮菜，非遗传承，「松鼠鳜鱼」「响油鳝糊」「樱桃肉」地道', budget: '¥100-150/人', xhs: '吴门人家 苏帮菜 拙政园', dp: '吴门人家 拙政园' },
-          { name: '裕兴记', lat: 31.322, lng: 120.627, desc: '苏州面馆头牌，「三虾面」「秃黄油面」季节限定，¥100+一碗但值得尝', budget: '¥60-150/人', xhs: '裕兴记 三虾面 苏州', dp: '裕兴记 拙政园' }
-        ]
-      },
-      { name: '苏州博物馆', lat: 31.320489, lng: 120.627701, type: 'spot', time: '12:00',
-        desc: '贝聿铭封山之作，建筑本身就是展品（快速浏览）',
-        budget: '免费（需预约）', detail: '⚠️ 必须提前 7 天在"苏州博物馆"微信公众号预约。如约不到，隔壁苏州园林博物馆（免费免预约）也不错。建筑比藏品更值得看。快速浏览 45 分钟。',
-        pay: { alipay: 1, wechat: 1 },
-        gmap: '苏州博物馆', xhsKeyword: '苏州博物馆 贝聿铭 预约 拍照' },
-      { name: '平江路 · 午餐+漫步', lat: 31.316000, lng: 120.634000, type: 'food', time: '13:30',
-        desc: '千年水巷，小桥流水 + 茶馆 + 苏帮菜，苏州必逛',
-        budget: '¥80-150/人', detail: '午餐推荐：松鹤楼（苏帮菜老字号，松鼠鳜鱼是招牌）、得月楼、哑巴生煎。饭后沿平江路走到耦园附近，找个沿河的茶馆喝碧螺春听评弹（¥50-80/人）。',
-        pay: { alipay: 1, wechat: 1, card: 1, cash: 1 },
-        dianpingKeyword: '平江路 苏帮菜 推荐', xhsKeyword: '平江路 美食 茶馆',
-        nearbyRestos: [
-          { name: '松鹤楼', lat: 31.317, lng: 120.633, desc: '始创1737年，苏帮菜头牌，「松鼠鳜鱼」教科书级别，人均 ¥150', budget: '¥120-180/人', xhs: '松鹤楼 松鼠鳜鱼', dp: '松鹤楼 平江路' },
-          { name: '哑巴生煎', lat: 31.317, lng: 120.632, desc: '临顿路上的苏州生煎天花板，皮薄底脆汤汁多，排队也值，¥15/8个', budget: '¥15-25/人', xhs: '哑巴生煎 苏州 排队', dp: '哑巴生煎 临顿路' },
-          { name: '桃花源记', lat: 31.316, lng: 120.635, desc: '平江路上的人气小吃，「赤豆小圆子」「糖粥」「鸡头米」苏州甜味代表', budget: '¥30-50/人', xhs: '桃花源记 平江路 糖粥', dp: '桃花源记 平江路' },
-          { name: '鸡脚旮旯', lat: 31.315, lng: 120.635, desc: '平江路网红小吃，「卤鸡爪」「鸭舌」边走边啃，排队但走得快', budget: '¥15-25/人', xhs: '鸡脚旮旯 平江路', dp: '鸡脚旮旯 平江路' }
-        ]
-      },
-      { name: '苏州站→南京南', lat: 31.329683, lng: 120.610870, type: 'transport', time: '17:00',
-        desc: 'G 字头高铁约 1 小时 10 分，二等座 ¥105。傍晚到南京',
-        budget: '¥105', detail: '苏州站→南京南站。南京南站出站后地铁 3 号线进市区。酒店建议订在夫子庙/新街口区域，放下行李出来逛秦淮河。',
-        pay: { alipay: 1, wechat: 1 },
-        gmap: '苏州站' },
-    ]
-  },
-  {
-    id: 7, label: 'D7 金陵', date: 'Day 7 · 钟山秦淮', title: '南京 · 中山陵→秦淮→返程', color: '#af52de',
-    locations: [
-      { name: '中山陵 + 音乐台', lat: 32.050000, lng: 118.854000, type: 'spot', time: '08:30',
-        desc: '孙中山先生陵寝，392 级台阶 + 音乐台鸽群',
-        budget: '免费（需预约）+ 音乐台 ¥10', detail: '⚠️ 提前在"南京钟山风景区"微信公众号预约。早上第一批进去（8:30），人少凉快。音乐台下鸽子 9-10 点最活跃。如果时间体力有限只去中山陵+音乐台就够了。',
-        pay: { alipay: 1, wechat: 1, cash: 0.5 },
-        gmap: '南京中山陵', xhsKeyword: '中山陵 预约 攻略 拍照',
-        nearbyRestos: [
-          { name: '南京大排档·中山陵店', lat: 32.045, lng: 118.850, desc: '景区内最方便的南京小吃一站，「美龄粥」「盐水鸭」「天王烤鸭包」', budget: '¥60-80/人', xhs: '南京大排档 中山陵', dp: '南京大排档 中山陵' },
-          { name: '回味鸭血粉丝汤', lat: 32.042, lng: 118.848, desc: '南京鸭血粉丝连锁标杆，汤鲜料足，景区附近也能吃到正经味道', budget: '¥20-35/人', xhs: '回味 鸭血粉丝汤 南京', dp: '回味鸭血粉丝 中山陵' }
-        ]
-      },
-      { name: '李记清真馆 · 午餐', lat: 32.028000, lng: 118.781000, type: 'food', time: '12:30',
-        desc: '南京必吃榜常客，「牛肉锅贴」南京第一，打钉巷1号',
-        budget: '¥30-50/人', detail: '从中山陵打车约 20 分钟过来。必点：牛肉锅贴（外酥里嫩、一口爆汁）、牛肉馄饨、牛杂汤。排队很长但翻台快，值得等。\n\n旁边的章云板鸭（评事街208号）顺路买半只盐水鸭带回家，南京人从小吃到大的味道。',
-        pay: { alipay: 1, wechat: 1, cash: 1 },
-        dianpingKeyword: '李记清真馆 牛肉锅贴', xhsKeyword: '南京 李记清真馆 锅贴',
-        nearbyRestos: [
-          { name: '章云板鸭', lat: 32.026, lng: 120.779, desc: '评事街老店，南京盐水鸭标杆，「盐水鸭」「烤鸭」打包带走，半只 ¥30-40', budget: '¥30-50/人', xhs: '章云板鸭 南京 必买', dp: '章云板鸭 评事街' },
-          { name: '草桥锅贴', lat: 32.028, lng: 120.780, desc: '李记隔壁的另一家老字号锅贴，排队比李记短，味道不输', budget: '¥20-35/人', xhs: '草桥锅贴 南京', dp: '草桥锅贴' }
-        ]
-      },
-      { name: '夫子庙 · 秦淮河', lat: 32.020935, lng: 118.790958, type: 'spot', time: '15:00',
-        desc: '六朝金粉，秦淮灯影，南京最有故事感的下午+傍晚',
-        budget: '夫子庙 ¥30 + 游船 ¥80', detail: '下午逛江南贡院（科举博物馆建在地下很震撼）→ 夫子庙大成殿 → 傍晚坐秦淮河画舫（40 分钟，天刚黑时最漂亮）。夫子庙小吃别在主街上买！往旁边巷子走：莲湖糕团店（赤豆元宵）、蒋有记（牛肉锅贴）。\n\n吃完饭去南京南站（地铁 3 号线 25 分钟），各大城市高铁直达。祝你旅途愉快 🎉',
-        pay: { alipay: 1, wechat: 1, card: 1, cash: 1 },
-        gmap: '南京夫子庙', xhsKeyword: '夫子庙 秦淮河 游船 值不值得',
-        nearbyRestos: [
-          { name: '莲湖糕团店', lat: 32.020, lng: 118.789, desc: '贡院西街24号，南京糕团代表，「赤豆元宵」「马蹄糕」「桂花糖芋苗」', budget: '¥15-30/人', xhs: '莲湖糕团店 夫子庙', dp: '莲湖糕团店 夫子庙' },
-          { name: '蒋有记', lat: 32.013, lng: 118.791, desc: '老门东内的百年老店，「牛肉锅贴」「牛肉汤」南京人从小吃到大', budget: '¥20-40/人', xhs: '蒋有记 老门东 锅贴', dp: '蒋有记 老门东' },
-          { name: '咸亨酒店·夫子庙', lat: 32.021, lng: 118.790, desc: '鲁迅笔下的咸亨酒店，夫子庙分店，「茴香豆」「臭豆腐」「黄酒奶茶」', budget: '¥40-80/人', xhs: '咸亨酒店 夫子庙', dp: '咸亨酒店 夫子庙' }
-        ]
-      },
-      { name: '南京南站 · 返程', lat: 31.970968, lng: 118.796786, type: 'transport', time: '19:00',
-        desc: '地铁 3 号线直达南京南站，各大城市高铁直达',
-        budget: '视目的地而定', detail: '地铁 3 号线约 25 分钟到南京南站。南京南站直达全国各大城市：北京 3.5h/¥445、武汉 3h/¥258、杭州 1.5h/¥118、上海 1.5h/¥135。祝你旅途愉快 🎉',
-        pay: { alipay: 1, wechat: 1, card: 1 },
-        gmap: '南京南站' },
-    ]
-  },
 ];
 
 // ═══════════════════════════════════════════════════
@@ -580,45 +523,44 @@ const DAYS = [
 // ═══════════════════════════════════════════════════
 function overviewContent() {
   return `
-<div class="hero"><h1>杭沪苏宁 · 江南四城</h1><p class="subtitle">杭州 → 上海 → 苏州 → 南京 · 7 天 6 晚 · 高铁环线含迪士尼</p></div>
+<div class="hero"><h1>杭沪双城 · 江南之行</h1><p class="subtitle">杭州 → 上海 · 6 天 5 晚 · 含迪士尼 · 从西湖到外滩</p></div>
 <div class="info-grid">
-  <div class="info-card"><div class="label">路线</div><div class="value">杭州 → 上海 → 苏州 → 南京</div></div>
-  <div class="info-card"><div class="label">交通</div><div class="value">全程高铁（4 段，¥362）</div></div>
-  <div class="info-card"><div class="label">节奏</div><div class="value">均衡 · 一天一个主区域</div></div>
-  <div class="info-card"><div class="label">预估费用</div><div class="value">¥4,500-7,000/人（含迪士尼）</div></div>
+  <div class="info-card"><div class="label">路线</div><div class="value">杭州 3 晚 → 上海 2 晚</div></div>
+  <div class="info-card"><div class="label">交通</div><div class="value">高铁杭州→上海（1h，¥73）</div></div>
+  <div class="info-card"><div class="label">节奏</div><div class="value">轻松 · 一天一个主区域</div></div>
+  <div class="info-card"><div class="label">住宿</div><div class="value">下沙宝龙→后市街→上海</div></div>
 </div>
 <div class="disney-banner">
-  <h3>🏰 D4 上海迪士尼乐园</h3>
-  <p>第 4 天全天留给迪士尼！七大园区 + 花车巡游 + 烟花秀，记得提前买票 &amp; 下载 App</p>
+  <h3>🏰 D5 上海迪士尼乐园</h3>
+  <p>第 5 天全天留给迪士尼！七大园区 + 花车巡游 + 烟花秀，记得提前买票 &amp; 下载 App</p>
 </div>
 <div class="section-head">行程概览</div>
 <div class="day-list">${DAYS.slice(1).map(d=>`<div class="card" onclick="go(${d.id})"><div class="name"><span class="dot" style="background:${d.color}"></span>${d.label} · ${d.title}</div><div class="desc">${d.date}</div></div>`).join('')}</div>
 <div class="section-head">支付提醒</div>
 <div class="pay-summary"><h4>💳 全程通用</h4>支付宝 / 微信支付覆盖所有场景，现金需求很低。<br><span class="ok-text">✓ 支付宝扫码</span> · <span class="ok-text">✓ 微信支付</span> · <span class="warn">⚠ 部分小摊只收现金</span></div>
-<div class="pay-summary"><h4>🎫 需要预约的</h4><span class="warn">灵隐寺、迪士尼、拙政园、苏州博物馆、中山陵</span> —— 旺季必须提前 3-7 天在微信公众号或官方 App 预约，否则大概率进不去。</div>
-<div class="pay-summary"><h4>🔗 小红书 / 大众点评</h4>点击按钮即可搜索对应餐厅或景点的最新评价。桌面端直接打开网页版；手机端优先唤起 App。<br><span class="warn">⚠ 手机端需安装对应 App 才能唤起</span></div>
+<div class="pay-summary"><h4>🎫 需要预约的</h4><span class="warn">灵隐寺、迪士尼</span> —— 旺季必须提前在微信公众号或官方 App 预约，否则大概率进不去。</div>
+<div class="pay-summary"><h4>🔗 小红书 / 大众点评</h4>点击按钮搜索对应餐厅或景点的最新评价。桌面端直接打开网页版；手机端优先唤起 App。<br><span class="warn">⚠ 手机端需安装对应 App 才能唤起</span></div>
 <div class="section-head">图例</div>
 <div class="legend">
   <div class="legend-item"><div class="legend-dot" style="background:var(--tint-red)"></div>餐厅</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--tint-blue)"></div>景点</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--tint-purple)"></div>酒吧</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--tint-pink)"></div>迪士尼</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--tint-orange)"></div>交通</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--tint-orange)"></div>交通/住宿</div>
 </div>
 <div class="section-head">设计理念</div>
 <div class="pay-summary">
 <strong>为什么这样排：</strong><br>
-• 杭州放前两站——先慢后快，西湖和灵隐需要放松的心情<br>
-• 第 4 天迪士尼——避开周末（如遇周末可灵活对调 D4/D5）<br>
-• 苏州第 6 天一日精华——拙政园+平江路，晚上直奔南京<br>
-• 全程高铁串联，每段不超过 1.5 小时<br><br>
+• D1 抵达休整——凌晨落地先补觉，晚上入住后市街逛河坊街<br>
+• 杭州 D2-D3——西湖+灵隐两天慢游，后市街出发步行可到西湖<br>
+• D4 杭州→上海——高铁 1 小时，下午法租界 citywalk<br>
+• D5 迪士尼全天——避开周末人流高峰<br>
+• D6 外滩豫园收尾——老城厢+万国建筑群，完美ending<br><br>
 <strong>删掉的常见选项：</strong><br>
-• <span style="color:var(--tint-red)">上海豫园+南京路</span> —— 压缩到第 5 天半天，给迪士尼让路<br>
-• <span style="color:var(--tint-red)">苏州山塘街+虎丘</span> —— 7天行程苏州只能一日精华<br>
-• <span style="color:var(--tint-red)">南京博物院</span> —— 最后一天返程日不做硬性安排，感兴趣可备选<br>
-• <span style="color:var(--tint-red)">周庄/同里/西塘</span> —— 四城已够紧凑，水乡留给下次<br><br>
+• <span style="color:var(--tint-red)">苏州/南京</span> —— 暂时留到下次，这次专注杭沪两城深度游<br>
+• <span style="color:var(--tint-red)">周庄/同里/西塘</span> —— 水乡需要单独一天，下次安排<br><br>
 <strong>天气提醒（7月）：</strong><br>
-• 四城高温 35°C+，上午 6-10 点最佳户外时间<br>
+• 杭沪高温 35°C+，上午 6-10 点最佳户外时间<br>
 • 下午 12-15 点尽量安排室内（博物馆、商场、茶馆）<br>
 • 江南夏天随时暴雨，包里始终带把伞<br>
 • 迪士尼大部分排队在室外，做好防晒并带折叠伞
@@ -639,7 +581,7 @@ function initMap() {
     return;
   }
   try {
-    map = L.map('map', { center: [31.23, 120.50], zoom: 8, zoomControl: false, attributionControl: true });
+    map = L.map('map', { center: [30.50, 120.80], zoom: 8, zoomControl: false, attributionControl: true });
     L.control.zoom({ position: 'topright' }).addTo(map);
     L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
       subdomains: '1234', maxZoom: 18,
